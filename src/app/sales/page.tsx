@@ -65,11 +65,8 @@ export default function SalesDashboard() {
 
   return (
     <main className="flex min-h-screen bg-gray-100">
-
-      {/* SIDEBAR */}
       <aside className="flex w-68 shrink-0 flex-col bg-[#111111] px-5 py-6 text-white">
 
-        {/* LOGO */}
         <div className="mb-8 flex items-center gap-3">
 
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F5C400] text-sm font-bold text-black">
@@ -82,12 +79,10 @@ export default function SalesDashboard() {
 
         </div>
 
-        {/* MENU */}
         <p className="mb-3 px-4 text-sm font-semibold uppercase text-gray-400">
           Menu
         </p>
 
-        {/* DASHBOARD */}
         <Link
           href="/sales"
           className="flex items-center gap-3 rounded-full bg-[#F5C400] px-4 py-2.5 text-sm font-semibold text-black"
@@ -95,17 +90,7 @@ export default function SalesDashboard() {
           <LayoutDashboard size={18} />
           Dashboard
         </Link>
-
-        {/* CONTACT */}
-        <Link
-          href="/sales/contact-list"
-          className="mt-3 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition hover:bg-white/10"
-        >
-          <Users size={18} />
-          Contact List
-        </Link>
-
-        {/* TICKET */}
+  
         <Link
           href="/sales/tickets"
           className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition hover:bg-white/10"
@@ -114,7 +99,6 @@ export default function SalesDashboard() {
           Ticket
         </Link>
 
-        {/* MONITORING */}
         <Link
           href="/sales/monitoring"
           className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition hover:bg-white/10"
@@ -165,14 +149,14 @@ export default function SalesDashboard() {
             >
 
               <DropdownMenuItem
-                onClick={() => router.push("/edit-profile")}
+                onClick={() => router.push("/sales/edit-profile")}
               >
                 <UserRound className="mr-2 h-4 w-4" />
                 Edit Profile
               </DropdownMenuItem>
 
               <DropdownMenuItem
-                onClick={() => router.push("/settings")}
+                onClick={() => router.push("/sales/settings")}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
@@ -198,11 +182,7 @@ export default function SalesDashboard() {
         </div>
 
       </aside>
-
-      {/* MAIN */}
       <section className="flex-1">
-
-        {/* HEADER */}
         <header className="flex h-20 items-center justify-between bg-white px-8">
 
           <div>
@@ -216,8 +196,6 @@ export default function SalesDashboard() {
             </p>
 
           </div>
-
-          {/* SEARCH */}
           <div className="flex h-10 w-64 items-center gap-2 rounded-full bg-gray-100 px-4 shadow-inner">
 
             <Search
@@ -235,11 +213,8 @@ export default function SalesDashboard() {
           </div>
 
         </header>
-
-        {/* CONTENT */}
         <div className="p-8">
 
-          {/* TOP ACTION */}
           <div className="mb-6 flex items-center justify-between">
 
             <div>
@@ -263,28 +238,8 @@ export default function SalesDashboard() {
             </button>
 
           </div>
-
-          {/* STATISTICS */}
           <div className="grid grid-cols-4 gap-4">
 
-            {/* CONTACT */}
-            <div className="rounded-2xl bg-white p-5 shadow-md">
-
-              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-100 text-yellow-700">
-                <Users size={18} />
-              </div>
-
-              <p className="text-2xl font-bold text-black">
-                24
-              </p>
-
-              <p className="text-sm text-gray-600">
-                Total Contact
-              </p>
-
-            </div>
-
-            {/* TICKET */}
             <div className="rounded-2xl bg-white p-5 shadow-md">
 
               <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-black">

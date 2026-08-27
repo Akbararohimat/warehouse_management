@@ -117,14 +117,6 @@ export default function SalesTickets() {
         </Link>
 
         <Link
-          href="/sales/contact-list"
-          className="mt-3 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition hover:bg-white/10"
-        >
-          <Users size={18} />
-          Contact List
-        </Link>
-
-        <Link
           href="/sales/tickets"
           className="mt-1 flex items-center gap-3 rounded-full bg-[#F5C400] px-4 py-2.5 text-sm font-semibold text-black"
         >
@@ -180,14 +172,14 @@ export default function SalesTickets() {
             >
 
               <DropdownMenuItem
-                onClick={() => router.push("/edit-profile")}
+                onClick={() => router.push("/sales/edit-profile")}
               >
                 <UserRound className="mr-2 h-4 w-4" />
                 Edit Profile
               </DropdownMenuItem>
 
               <DropdownMenuItem
-                onClick={() => router.push("/settings")}
+                onClick={() => router.push("/sales/settings")}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings

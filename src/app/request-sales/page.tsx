@@ -2,9 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-
-import { Calendar } from "@/components/ui/calendar"
-
+import { useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
@@ -39,7 +37,7 @@ type RequestData = {
 }
 
 export default function RequestSales() {
-  const [date, setDate] = useState<Date | undefined>(new Date())
+  const router = useRouter()
 
   const [search, setSearch] = useState("")
 
@@ -130,46 +128,6 @@ export default function RequestSales() {
           <span>Request Sales</span>
         </Link>
 
-        {/* CALENDAR */}
-        <div className="mt-6 border-t border-white/10 pt-5">
-          <div className="rounded-2xl border border-white/10 bg-[#120832] p-2">
-
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              defaultMonth={new Date()}
-              className="w-full bg-transparent text-white"
-              classNames={{
-                caption_label:
-                  "text-sm font-medium text-white",
-
-                button_previous:
-                  "text-white hover:bg-white/10 hover:text-white",
-
-                button_next:
-                  "text-white hover:bg-white/10 hover:text-white",
-
-                weekday:
-                  "text-white/50",
-
-                day:
-                  "text-white hover:bg-white/10 hover:text-white",
-
-                today:
-                  "bg-white/10 text-white",
-
-                outside:
-                  "text-white/30",
-
-                disabled:
-                  "text-white/30 opacity-50",
-              }}
-            />
-
-          </div>
-        </div>
-
         {/* PROFILE */}
         <div className="mt-auto pt-5">
 
@@ -209,12 +167,16 @@ export default function RequestSales() {
               className="mb-2 w-52"
             >
 
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => router.push("/edit-profile")}
+                >
+                  
                 <UserRound className="mr-2 h-4 w-4" />
                 Edit Profile
               </DropdownMenuItem>
 
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                 onClick={()=> router.push("/settings")}>
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>

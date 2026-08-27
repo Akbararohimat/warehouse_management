@@ -3,9 +3,6 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-
-import { Calendar } from "@/components/ui/calendar"
-
 import {
   LayoutDashboard,
   Users,
@@ -37,7 +34,6 @@ import {
 
 export default function Dashboard() {
   const router = useRouter()
-  const [date, setDate] = useState<Date | undefined>(new Date())
   const [showAddMenu, setShowAddMenu] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
   const [step, setStep] = useState(1)
@@ -164,45 +160,17 @@ export default function Dashboard() {
           </span>
         </Link>
 
+        <Link
+          href="/products"
+          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344">
+            <FileText size={19} />
+
+            <span>
+              Products
+            </span>
+          </Link>
+
         <div className="mt-6 border-t border-white/10 pt-5">
-
-          <div className="rounded-2xl border border-white/10 bg-[#120832] p-2">
-
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              defaultMonth={new Date()}
-              className="w-full bg-transparent text-white"
-              classNames={{
-                caption_label:
-                  "text-sm font-medium text-white",
-
-                button_previous:
-                  "text-white hover:bg-white/10 hover:text-white",
-
-                button_next:
-                  "text-white hover:bg-white/10 hover:text-white",
-
-                weekday:
-                  "text-white/50",
-
-                day:
-                  "text-white hover:bg-white/10 hover:text-white",
-
-                today:
-                  "bg-white/10 text-white",
-
-                outside:
-                  "text-white/30",
-
-                disabled:
-                  "text-white/30 opacity-50",
-              }}
-            />
-
-          </div>
-
         </div>
 
         <div className="mt-auto">
@@ -353,7 +321,7 @@ export default function Dashboard() {
 
                     <List size={17} />
 
-                    New Items
+                    New Products
 
                   </button>
 
@@ -386,18 +354,6 @@ export default function Dashboard() {
 
           <div className="flex gap-5">
 
-
-            <div className="h-28 w-64 rounded-2xl bg-white p-6 shadow-md">
-
-              <p className="text-3xl font-bold text-black">
-                0
-              </p>
-
-              <p className="mt-1 text-sm text-gray-700">
-                Total Kontak
-              </p>
-
-            </div>
 
 
             <div className="h-28 w-64 rounded-2xl bg-white p-6 shadow-md">
