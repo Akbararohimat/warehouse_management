@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -20,7 +20,6 @@ import {
   Phone,
   Mail,
   Package,
-  Image as ImageIcon,
   ArrowLeft,
   ChevronRight,
   Filter,
@@ -39,13 +38,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 type Product = {
   id: number
-  nama: string
+  code?: string
+  name?: string
+  nama?: string
+  vendor?: string
+  vendorContactId?: number | null
+  category?: string
   brand: string
-  model: string
-  deskripsi: string
-  images: string[]
+  model?: string
+  price?: string
+  status?: "Active" | "Inactive"
+  image?: string
+  images?: string[]
+  deskripsi?: string
 }
 
 type Contact = {
@@ -57,68 +68,9 @@ type Contact = {
   productIds: number[]
 }
 
-const initialProducts: Product[] = [
-  {
-    id: 1,
-    nama: "Huawei Router AX3",
-    brand: "Huawei",
-    model: "WS7200",
-    deskripsi:
-      "Router WiFi 6 dual-band untuk kebutuhan jaringan customer.",
-    images: [
-      "https://placehold.co/900x600?text=Huawei+Depan",
-      "https://placehold.co/900x600?text=Huawei+Samping",
-      "https://placehold.co/900x600?text=Huawei+Belakang",
-      "https://placehold.co/900x600?text=Huawei+Atas",
-      "https://placehold.co/900x600?text=Huawei+Lainnya",
-    ],
-  },
-  {
-    id: 2,
-    nama: "Huawei Switch S5735",
-    brand: "Huawei",
-    model: "S5735-L24T4S",
-    deskripsi:
-      "Managed switch untuk kebutuhan jaringan perusahaan.",
-    images: [
-      "https://placehold.co/900x600?text=Switch+Depan",
-      "https://placehold.co/900x600?text=Switch+Samping",
-      "https://placehold.co/900x600?text=Switch+Belakang",
-      "https://placehold.co/900x600?text=Switch+Atas",
-      "https://placehold.co/900x600?text=Switch+Lainnya",
-    ],
-  },
-  {
-    id: 3,
-    nama: "Cisco Catalyst 9200",
-    brand: "Cisco",
-    model: "C9200L",
-    deskripsi:
-      "Enterprise switch untuk kebutuhan jaringan kantor.",
-    images: [
-      "https://placehold.co/900x600?text=Cisco+Depan",
-      "https://placehold.co/900x600?text=Cisco+Samping",
-      "https://placehold.co/900x600?text=Cisco+Belakang",
-      "https://placehold.co/900x600?text=Cisco+Atas",
-      "https://placehold.co/900x600?text=Cisco+Lainnya",
-    ],
-  },
-  {
-    id: 4,
-    nama: "MikroTik RB4011",
-    brand: "MikroTik",
-    model: "RB4011iGS+",
-    deskripsi:
-      "Router enterprise dengan dukungan routing dan switching.",
-    images: [
-      "https://placehold.co/900x600?text=MikroTik+Depan",
-      "https://placehold.co/900x600?text=MikroTik+Samping",
-      "https://placehold.co/900x600?text=MikroTik+Belakang",
-      "https://placehold.co/900x600?text=MikroTik+Atas",
-      "https://placehold.co/900x600?text=MikroTik+Lainnya",
-    ],
-  },
-]
+/* =========================================================
+   INITIAL CONTACTS
+========================================================= */
 
 const initialContacts: Contact[] = [
   {
@@ -127,7 +79,7 @@ const initialContacts: Contact[] = [
     perusahaan: "PT.PTan",
     telepon: "08888888",
     email: "akbar@gmail.com",
-    productIds: [1, 2],
+    productIds: [],
   },
   {
     id: 2,
@@ -135,7 +87,7 @@ const initialContacts: Contact[] = [
     perusahaan: "PT. ABC",
     telepon: "08123456789",
     email: "akbar2@gmail.com",
-    productIds: [3],
+    productIds: [],
   },
   {
     id: 3,
@@ -143,19 +95,139 @@ const initialContacts: Contact[] = [
     perusahaan: "PT. Jaya",
     telepon: "08234567890",
     email: "akbar3@gmail.com",
-    productIds: [1, 4],
+    productIds: [],
   },
 ]
+
+/* =========================================================
+   INITIAL PRODUCTS
+========================================================= */
+
+const initialProducts: Product[] = [
+  {
+    id: 1,
+    code: "PRD-001",
+    name: "Fiber Optic Cable 12 Core",
+    vendor: "PT.ABC",
+    vendorContactId: null,
+    category: "Fiber Optic",
+    brand: "Furukawa",
+    price: "150000",
+    status: "Active",
+    image:
+      "https://placehold.co/900x600?text=Fiber+Optic",
+    deskripsi:
+      "Fiber optic cable untuk kebutuhan jaringan.",
+  },
+  {
+    id: 2,
+    code: "PRD-002",
+    name: "Router Mikrotik",
+    vendor: "PT.ACB",
+    vendorContactId: null,
+    category: "Network",
+    brand: "MikroTik",
+    price: "2500000",
+    status: "Active",
+    image:
+      "https://placehold.co/900x600?text=Router",
+    deskripsi:
+      "Router untuk kebutuhan jaringan perusahaan.",
+  },
+  {
+    id: 3,
+    code: "PRD-003",
+    name: "Optical Distribution Box",
+    vendor: "PT.DCA",
+    vendorContactId: null,
+    category: "Fiber Optic",
+    brand: "CommScope",
+    price: "450000",
+    status: "Active",
+    image:
+      "https://placehold.co/900x600?text=ODF",
+    deskripsi:
+      "Optical distribution box untuk jaringan fiber optic.",
+  },
+  {
+    id: 4,
+    code: "PRD-004",
+    name: "Network Switch 24 Port",
+    vendor: "PT.CDC",
+    vendorContactId: null,
+    category: "Network",
+    brand: "TP-Link",
+    price: "850000",
+    status: "Inactive",
+    image:
+      "https://placehold.co/900x600?text=Switch",
+    deskripsi:
+      "Network switch 24 port untuk kebutuhan jaringan.",
+  },
+]
+
+/* =========================================================
+   HELPER
+========================================================= */
+
+function getProductName(product: Product) {
+  return product.name || product.nama || "Unnamed Product"
+}
+
+function getProductImage(product: Product) {
+  if (
+    product.image &&
+    typeof product.image === "string" &&
+    product.image.trim()
+  ) {
+    return product.image
+  }
+
+  if (
+    Array.isArray(product.images) &&
+    product.images.length > 0 &&
+    product.images[0]
+  ) {
+    return product.images[0]
+  }
+
+  return "https://placehold.co/900x600?text=Product"
+}
+
+function getProductImages(product: Product) {
+  if (
+    Array.isArray(product.images) &&
+    product.images.length > 0
+  ) {
+    return product.images
+  }
+
+  return [getProductImage(product)]
+}
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function ContactList() {
   const router = useRouter()
 
+  /* =======================================================
+     STATE
+  ======================================================= */
+
   const [search, setSearch] = useState("")
-  const [selectedProduct, setSelectedProduct] = useState("Semua Product")
+
+  const [selectedProduct, setSelectedProduct] =
+    useState("Semua Product")
 
   const [showForm, setShowForm] = useState(false)
-  const [showContactDetail, setShowContactDetail] = useState(false)
-  const [showProductDetail, setShowProductDetail] = useState(false)
+
+  const [showContactDetail, setShowContactDetail] =
+    useState(false)
+
+  const [showProductDetail, setShowProductDetail] =
+    useState(false)
 
   const [selectedContact, setSelectedContact] =
     useState<Contact | null>(null)
@@ -166,108 +238,448 @@ export default function ContactList() {
   const [contacts, setContacts] =
     useState<Contact[]>(initialContacts)
 
-  const [products] =
+  const [products, setProducts] =
     useState<Product[]>(initialProducts)
 
-  // FORM CONTACT
+  const [hydrated, setHydrated] = useState(false)
+
+  /* =======================================================
+     CONTACT FORM
+  ======================================================= */
+
   const [nama, setNama] = useState("")
   const [perusahaan, setPerusahaan] = useState("")
   const [telepon, setTelepon] = useState("")
   const [email, setEmail] = useState("")
-  const [selectedProductIds, setSelectedProductIds] =
-    useState<number[]>([])
 
-  const filteredContacts = contacts.filter((contact) => {
-    const keyword = search.toLowerCase()
+  /* =======================================================
+     LOAD LOCAL STORAGE
+  ======================================================= */
 
-    const matchesSearch =
-      contact.nama.toLowerCase().includes(keyword) ||
-      contact.perusahaan.toLowerCase().includes(keyword) ||
-      contact.email.toLowerCase().includes(keyword)
+  useEffect(() => {
+    try {
+      const storedContacts =
+        localStorage.getItem("rnd_contacts")
 
-    const matchesProduct =
-      selectedProduct === "Semua Product" ||
-      contact.productIds.some((productId) => {
-        const product = products.find(
-          (item) => item.id === productId
+      const storedProducts =
+        localStorage.getItem("rnd_products")
+
+      if (storedContacts) {
+        const parsedContacts =
+          JSON.parse(storedContacts)
+
+        if (Array.isArray(parsedContacts)) {
+          setContacts(parsedContacts)
+        }
+      } else {
+        localStorage.setItem(
+          "rnd_contacts",
+          JSON.stringify(initialContacts)
         )
+      }
 
-        return product?.nama === selectedProduct
-      })
+      if (storedProducts) {
+        const parsedProducts =
+          JSON.parse(storedProducts)
 
-    return matchesSearch && matchesProduct
-  })
+        if (Array.isArray(parsedProducts)) {
+          setProducts(parsedProducts)
+        }
+      } else {
+        localStorage.setItem(
+          "rnd_products",
+          JSON.stringify(initialProducts)
+        )
+      }
+    } catch (error) {
+      console.error(
+        "Gagal membaca localStorage:",
+        error
+      )
+    }
+
+    setHydrated(true)
+  }, [])
+
+  /* =======================================================
+     SAVE CONTACTS
+  ======================================================= */
+
+  useEffect(() => {
+    if (!hydrated) return
+
+    localStorage.setItem(
+      "rnd_contacts",
+      JSON.stringify(contacts)
+    )
+  }, [contacts, hydrated])
+
+  /* =======================================================
+     SAVE PRODUCTS
+  ======================================================= */
+
+  useEffect(() => {
+    if (!hydrated) return
+
+    localStorage.setItem(
+      "rnd_products",
+      JSON.stringify(products)
+    )
+  }, [products, hydrated])
+
+  /* =======================================================
+     SYNC DATA WHEN TAB/FLOW CHANGES
+  ======================================================= */
+
+  useEffect(() => {
+    const syncData = () => {
+      try {
+        const storedContacts =
+          localStorage.getItem("rnd_contacts")
+
+        const storedProducts =
+          localStorage.getItem("rnd_products")
+
+        if (storedContacts) {
+          const parsedContacts =
+            JSON.parse(storedContacts)
+
+          if (Array.isArray(parsedContacts)) {
+            setContacts(parsedContacts)
+          }
+        }
+
+        if (storedProducts) {
+          const parsedProducts =
+            JSON.parse(storedProducts)
+
+          if (Array.isArray(parsedProducts)) {
+            setProducts(parsedProducts)
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Gagal sync localStorage:",
+          error
+        )
+      }
+    }
+
+    window.addEventListener(
+      "storage",
+      syncData
+    )
+
+    window.addEventListener(
+      "focus",
+      syncData
+    )
+
+    return () => {
+      window.removeEventListener(
+        "storage",
+        syncData
+      )
+
+      window.removeEventListener(
+        "focus",
+        syncData
+      )
+    }
+  }, [])
+
+  /* =======================================================
+     RELOAD DATA
+  ======================================================= */
+
+  const reloadData = () => {
+    try {
+      const storedContacts =
+        localStorage.getItem("rnd_contacts")
+
+      const storedProducts =
+        localStorage.getItem("rnd_products")
+
+      if (storedContacts) {
+        const parsedContacts =
+          JSON.parse(storedContacts)
+
+        if (Array.isArray(parsedContacts)) {
+          setContacts(parsedContacts)
+        }
+      }
+
+      if (storedProducts) {
+        const parsedProducts =
+          JSON.parse(storedProducts)
+
+        if (Array.isArray(parsedProducts)) {
+          setProducts(parsedProducts)
+        }
+      }
+    } catch (error) {
+      console.error(
+        "Gagal reload data:",
+        error
+      )
+    }
+  }
+
+  /* =======================================================
+     ADD CONTACT
+  ======================================================= */
 
   const handleAddContact = () => {
     if (
-      !nama ||
-      !perusahaan ||
-      !telepon ||
-      !email
+      !nama.trim() ||
+      !perusahaan.trim() ||
+      !telepon.trim() ||
+      !email.trim()
     ) {
       return
     }
 
     const newContact: Contact = {
       id: Date.now(),
-      nama,
-      perusahaan,
-      telepon,
-      email,
-      productIds: selectedProductIds,
+      nama: nama.trim(),
+      perusahaan: perusahaan.trim(),
+      telepon: telepon.trim(),
+      email: email.trim(),
+      productIds: [],
     }
 
-    setContacts((prev) => [...prev, newContact])
+    setContacts((prev) => [
+      ...prev,
+      newContact,
+    ])
 
     setNama("")
     setPerusahaan("")
     setTelepon("")
     setEmail("")
-    setSelectedProductIds([])
 
     setShowForm(false)
   }
 
-  const handleDeleteContact = () => {
-    if (!selectedContact) {
-      return
-    }
+  /* =======================================================
+     DELETE CONTACT
+  ======================================================= */
 
-    setContacts((prev) =>
-      prev.filter(
-        (contact) => contact.id !== selectedContact.id
+  const handleDeleteContact = () => {
+    if (!selectedContact) return
+
+    const contactId =
+      selectedContact.id
+
+    const updatedContacts =
+      contacts.filter(
+        (contact) =>
+          contact.id !== contactId
       )
+
+    const updatedProducts =
+      products.map((product) => {
+        if (
+          product.vendorContactId ===
+          contactId
+        ) {
+          return {
+            ...product,
+            vendorContactId: null,
+          }
+        }
+
+        return product
+      })
+
+    setContacts(updatedContacts)
+    setProducts(updatedProducts)
+
+    localStorage.setItem(
+      "rnd_contacts",
+      JSON.stringify(updatedContacts)
+    )
+
+    localStorage.setItem(
+      "rnd_products",
+      JSON.stringify(updatedProducts)
     )
 
     setSelectedContact(null)
     setShowContactDetail(false)
   }
 
-  const openContactDetail = (contact: Contact) => {
-    setSelectedContact(contact)
+  /* =======================================================
+     FILTER CONTACTS
+  ======================================================= */
+
+  const filteredContacts =
+    contacts.filter((contact) => {
+      const keyword =
+        search.toLowerCase().trim()
+
+      const matchesSearch =
+        !keyword ||
+        contact.nama
+          .toLowerCase()
+          .includes(keyword) ||
+        contact.perusahaan
+          .toLowerCase()
+          .includes(keyword) ||
+        contact.email
+          .toLowerCase()
+          .includes(keyword)
+
+      const matchesProduct =
+        selectedProduct ===
+          "Semua Product" ||
+        contact.productIds.some(
+          (productId) => {
+            const product =
+              products.find(
+                (item) =>
+                  item.id === productId
+              )
+
+            return (
+              getProductName(product || {}) ===
+              selectedProduct
+            )
+          }
+        ) ||
+        products.some(
+          (product) =>
+            product.vendorContactId ===
+              contact.id &&
+            getProductName(product) ===
+              selectedProduct
+        )
+
+      return (
+        matchesSearch &&
+        matchesProduct
+      )
+    })
+
+  /* =======================================================
+     OPEN CONTACT DETAIL
+  ======================================================= */
+
+  const openContactDetail = (
+    contact: Contact
+  ) => {
+    reloadData()
+
+    const storedContacts =
+      localStorage.getItem("rnd_contacts")
+
+    let latestContact = contact
+
+    if (storedContacts) {
+      try {
+        const parsedContacts =
+          JSON.parse(storedContacts)
+
+        if (Array.isArray(parsedContacts)) {
+          const found =
+            parsedContacts.find(
+              (item: Contact) =>
+                item.id === contact.id
+            )
+
+          if (found) {
+            latestContact = found
+          }
+        }
+      } catch {
+        // gunakan contact saat ini
+      }
+    }
+
+    setSelectedContact(
+      latestContact
+    )
+
     setShowContactDetail(true)
   }
 
-  const openProductDetail = (product: Product) => {
+  /* =======================================================
+     GET CONTACT PRODUCTS
+     
+     Produk dianggap milik contact jika:
+     1. productIds berisi product.id
+     ATAU
+     2. product.vendorContactId === contact.id
+     
+     Jadi meskipun contactIds belum tersimpan
+     ke object contact, product tetap muncul.
+  ======================================================= */
+
+  const getContactProducts = (
+    contact: Contact
+  ) => {
+    return products.filter(
+      (product) => {
+        const byProductIds =
+          contact.productIds?.includes(
+            product.id
+          )
+
+        const byVendorContact =
+          product.vendorContactId ===
+          contact.id
+
+        return (
+          byProductIds ||
+          byVendorContact
+        )
+      }
+    )
+  }
+
+  /* =======================================================
+     OPEN PRODUCT DETAIL
+  ======================================================= */
+
+  const openProductDetail = (
+    product: Product
+  ) => {
     setSelectedProductDetail(product)
     setShowProductDetail(true)
   }
 
-  const toggleProductSelection = (productId: number) => {
-    setSelectedProductIds((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
-    )
-  }
+  /* =======================================================
+     PRODUCT OPTIONS
+  ======================================================= */
+
+  const productOptions = useMemo(() => {
+    const names = products
+      .map((product) =>
+        getProductName(product)
+      )
+      .filter(Boolean)
+
+    return [
+      "Semua Product",
+      ...Array.from(
+        new Set(names)
+      ),
+    ]
+  }, [products])
+
+  /* =======================================================
+     RETURN
+  ======================================================= */
 
   return (
     <main className="flex min-h-screen bg-gray-100">
 
-      {/* SIDEBAR */}
+      {/* ===================================================
+          SIDEBAR
+      =================================================== */}
+
       <aside className="flex w-68 flex-col bg-[#10052D] px-5 py-6 text-white">
 
-        {/* LOGO */}
         <div className="mb-8 flex items-center gap-3">
 
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-bold text-[#10052D]">
@@ -280,7 +692,6 @@ export default function ContactList() {
 
         </div>
 
-        {/* MENU */}
         <p className="mb-3 text-sm font-semibold uppercase text-gray-300">
           Menu
         </p>
@@ -310,14 +721,15 @@ export default function ContactList() {
         </Link>
 
         <Link
-           href="/products"
+          href="/products"
           className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm hover:bg-[#211344]"
         >
-          <FileText size={18} />
+          <Package size={18} />
           Products
         </Link>
 
         {/* PROFILE */}
+
         <div className="mt-auto">
 
           <DropdownMenu>
@@ -360,7 +772,9 @@ export default function ContactList() {
 
               <DropdownMenuItem
                 onClick={() =>
-                  router.push("/edit-profile")
+                  router.push(
+                    "/edit-profile"
+                  )
                 }
               >
                 <UserRound className="mr-2 h-4 w-4" />
@@ -369,7 +783,9 @@ export default function ContactList() {
 
               <DropdownMenuItem
                 onClick={() =>
-                  router.push("/settings")
+                  router.push(
+                    "/settings"
+                  )
                 }
               >
                 <Settings className="mr-2 h-4 w-4" />
@@ -379,7 +795,9 @@ export default function ContactList() {
               <DropdownMenuSeparator />
 
               <DropdownMenuItem
-                onClick={() => router.push("/")}
+                onClick={() =>
+                  router.push("/")
+                }
                 className="text-red-600"
               >
                 <LogOut className="mr-2 h-4 w-4" />
@@ -394,10 +812,14 @@ export default function ContactList() {
 
       </aside>
 
-      {/* MAIN */}
+      {/* ===================================================
+          MAIN
+      =================================================== */}
+
       <section className="flex-1">
 
         {/* HEADER */}
+
         <header className="flex h-20 items-center justify-between bg-white px-8">
 
           <div>
@@ -426,7 +848,11 @@ export default function ContactList() {
 
           <div className="flex items-center gap-3">
 
-            <button className="flex h-9 w-16 items-center justify-center rounded-full bg-gray-100 text-black shadow-sm">
+            <button
+              type="button"
+              className="flex h-9 w-16 items-center justify-center rounded-full bg-gray-100 text-black shadow-sm"
+            >
+
               <Plus size={18} />
 
               <span className="mx-2 text-gray-400">
@@ -434,6 +860,7 @@ export default function ContactList() {
               </span>
 
               <ChevronDown size={15} />
+
             </button>
 
             <div className="flex h-10 w-64 items-center gap-2 rounded-full bg-gray-100 px-4 shadow-inner">
@@ -454,12 +881,17 @@ export default function ContactList() {
         </header>
 
         {/* CONTENT */}
+
         <div className="p-8">
 
           {/* TOP ACTION */}
+
           <div className="mb-4 flex items-center justify-between">
 
             <div className="flex items-center gap-3">
+
+              {/* SEARCH */}
+
               <div className="flex h-11 w-72 items-center gap-2 rounded-full bg-white px-4 shadow-md">
 
                 <Search
@@ -472,34 +904,41 @@ export default function ContactList() {
                   placeholder="Find nama, perusahaan, atau email..."
                   value={search}
                   onChange={(e) =>
-                    setSearch(e.target.value)
+                    setSearch(
+                      e.target.value
+                    )
                   }
                   className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-500"
                 />
 
               </div>
+
+              {/* PRODUCT FILTER */}
+
               <div className="relative">
 
                 <select
-                  value={selectedProduct}
+                  value={
+                    selectedProduct
+                  }
                   onChange={(e) =>
-                    setSelectedProduct(e.target.value)
+                    setSelectedProduct(
+                      e.target.value
+                    )
                   }
                   className="h-11 appearance-none rounded-full border-none bg-white pl-11 pr-10 text-sm font-medium text-gray-700 shadow-md outline-none"
                 >
 
-                  <option>
-                    Semua Product
-                  </option>
-
-                  {products.map((product) => (
-                    <option
-                      key={product.id}
-                      value={product.nama}
-                    >
-                      {product.nama}
-                    </option>
-                  ))}
+                  {productOptions.map(
+                    (productName) => (
+                      <option
+                        key={productName}
+                        value={productName}
+                      >
+                        {productName}
+                      </option>
+                    )
+                  )}
 
                 </select>
 
@@ -516,18 +955,32 @@ export default function ContactList() {
               </div>
 
             </div>
+
             <div className="flex items-center gap-3">
 
+              {/* DELETE */}
+
               <button
-                onClick={handleDeleteContact}
-                disabled={!selectedContact}
+                type="button"
+                onClick={
+                  handleDeleteContact
+                }
+                disabled={
+                  !selectedContact
+                }
                 className="flex h-11 w-14 items-center justify-center rounded-2xl bg-red-600 text-white shadow-md transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 <Trash2 size={21} />
               </button>
 
+              {/* ADD */}
+
               <button
-                onClick={() => setShowForm(true)}
+                type="button"
+                onClick={() => {
+                  reloadData()
+                  setShowForm(true)
+                }}
                 className="flex h-11 items-center gap-2 rounded-2xl bg-[#33245A] px-5 text-sm font-semibold text-white shadow-md transition hover:bg-[#271b46]"
               >
                 <Plus size={18} />
@@ -537,6 +990,11 @@ export default function ContactList() {
             </div>
 
           </div>
+
+          {/* =================================================
+              CONTACT TABLE
+          ================================================= */}
+
           <div className="min-h-[520px] rounded-2xl bg-white p-5 shadow-md">
 
             <div className="grid grid-cols-[1.2fr_1.2fr_1fr_1.3fr] border-b border-gray-400 pb-3 text-sm font-bold text-black">
@@ -558,37 +1016,44 @@ export default function ContactList() {
               </div>
 
             </div>
-            {filteredContacts.map((contact) => (
 
-              <button
-                key={contact.id}
-                onClick={() =>
-                  openContactDetail(contact)
-                }
-                className="grid w-full grid-cols-[1.2fr_1.2fr_1fr_1.3fr] border-b border-gray-300 py-4 text-left text-sm transition hover:bg-[#f8f6fc]"
-              >
+            {filteredContacts.map(
+              (contact) => (
 
-                <div className="font-medium text-gray-900">
-                  {contact.nama}
-                </div>
+                <button
+                  type="button"
+                  key={contact.id}
+                  onClick={() =>
+                    openContactDetail(
+                      contact
+                    )
+                  }
+                  className="grid w-full grid-cols-[1.2fr_1.2fr_1fr_1.3fr] border-b border-gray-300 py-4 text-left text-sm transition hover:bg-[#f8f6fc]"
+                >
 
-                <div>
-                  {contact.perusahaan}
-                </div>
+                  <div className="font-medium text-gray-900">
+                    {contact.nama}
+                  </div>
 
-                <div>
-                  {contact.telepon}
-                </div>
+                  <div>
+                    {contact.perusahaan}
+                  </div>
 
-                <div>
-                  {contact.email}
-                </div>
+                  <div>
+                    {contact.telepon}
+                  </div>
 
-              </button>
+                  <div>
+                    {contact.email}
+                  </div>
 
-            ))}
+                </button>
 
-            {filteredContacts.length === 0 && (
+              )
+            )}
+
+            {filteredContacts.length ===
+              0 && (
 
               <div className="flex h-40 items-center justify-center">
 
@@ -605,6 +1070,11 @@ export default function ContactList() {
         </div>
 
       </section>
+
+      {/* ===================================================
+          ADD CONTACT MODAL
+      =================================================== */}
+
       {showForm && (
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -626,7 +1096,10 @@ export default function ContactList() {
               </div>
 
               <button
-                onClick={() => setShowForm(false)}
+                type="button"
+                onClick={() =>
+                  setShowForm(false)
+                }
                 className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
               >
                 <X size={20} />
@@ -637,6 +1110,7 @@ export default function ContactList() {
             <div className="space-y-4">
 
               {/* NAMA */}
+
               <div>
 
                 <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -646,7 +1120,9 @@ export default function ContactList() {
                 <input
                   value={nama}
                   onChange={(e) =>
-                    setNama(e.target.value)
+                    setNama(
+                      e.target.value
+                    )
                   }
                   placeholder="Nama contact"
                   className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-black outline-none focus:border-[#33245A]"
@@ -655,6 +1131,7 @@ export default function ContactList() {
               </div>
 
               {/* PERUSAHAAN */}
+
               <div>
 
                 <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -664,7 +1141,9 @@ export default function ContactList() {
                 <input
                   value={perusahaan}
                   onChange={(e) =>
-                    setPerusahaan(e.target.value)
+                    setPerusahaan(
+                      e.target.value
+                    )
                   }
                   placeholder="Nama perusahaan"
                   className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-black outline-none focus:border-[#33245A]"
@@ -673,6 +1152,7 @@ export default function ContactList() {
               </div>
 
               {/* TELEPON */}
+
               <div>
 
                 <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -682,7 +1162,9 @@ export default function ContactList() {
                 <input
                   value={telepon}
                   onChange={(e) =>
-                    setTelepon(e.target.value)
+                    setTelepon(
+                      e.target.value
+                    )
                   }
                   placeholder="08xxxxxxxxxx"
                   className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-black outline-none focus:border-[#33245A]"
@@ -691,6 +1173,7 @@ export default function ContactList() {
               </div>
 
               {/* EMAIL */}
+
               <div>
 
                 <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -701,61 +1184,13 @@ export default function ContactList() {
                   type="email"
                   value={email}
                   onChange={(e) =>
-                    setEmail(e.target.value)
+                    setEmail(
+                      e.target.value
+                    )
                   }
                   placeholder="email@gmail.com"
                   className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-black outline-none focus:border-[#33245A]"
                 />
-
-              </div>
-
-              {/* PRODUCT */}
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Product
-                </label>
-
-                <div className="grid max-h-36 grid-cols-2 gap-2 overflow-y-auto">
-
-                  {products.map((product) => {
-
-                    const selected =
-                      selectedProductIds.includes(
-                        product.id
-                      )
-
-                    return (
-
-                      <button
-                        type="button"
-                        key={product.id}
-                        onClick={() =>
-                          toggleProductSelection(
-                            product.id
-                          )
-                        }
-                        className={`rounded-xl border px-3 py-2.5 text-left text-sm transition ${
-                          selected
-                            ? "border-[#33245A] bg-[#f1edfa] text-[#33245A]"
-                            : "border-gray-200 hover:bg-gray-50"
-                        }`}
-                      >
-
-                        <p className="font-semibold">
-                          {product.nama}
-                        </p>
-
-                        <p className="text-xs text-gray-500">
-                          {product.brand}
-                        </p>
-
-                      </button>
-
-                    )
-                  })}
-
-                </div>
 
               </div>
 
@@ -764,15 +1199,27 @@ export default function ContactList() {
             <div className="mt-6 flex justify-end gap-3">
 
               <button
-                onClick={() => setShowForm(false)}
+                type="button"
+                onClick={() =>
+                  setShowForm(false)
+                }
                 className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
               >
                 Batal
               </button>
 
               <button
-                onClick={handleAddContact}
-                className="rounded-xl bg-[#33245A] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#271b46]"
+                type="button"
+                onClick={
+                  handleAddContact
+                }
+                disabled={
+                  !nama.trim() ||
+                  !perusahaan.trim() ||
+                  !telepon.trim() ||
+                  !email.trim()
+                }
+                className="rounded-xl bg-[#33245A] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#271b46] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Simpan Contact
               </button>
@@ -785,27 +1232,30 @@ export default function ContactList() {
 
       )}
 
-      {/* ========================= */}
-      {/* CONTACT DETAIL DRAWER */}
-      {/* ========================= */}
+      {/* ===================================================
+          CONTACT DETAIL DRAWER
+      =================================================== */}
 
-      {showContactDetail && selectedContact && (
+      {showContactDetail &&
+        selectedContact && (
 
         <div className="fixed inset-0 z-40">
 
-          {/* BACKDROP */}
           <button
+            type="button"
             aria-label="Close detail"
             onClick={() =>
-              setShowContactDetail(false)
+              setShowContactDetail(
+                false
+              )
             }
             className="absolute inset-0 bg-black/30"
           />
 
-          {/* DRAWER */}
           <aside className="absolute right-0 top-0 flex h-full w-[430px] flex-col bg-white shadow-2xl">
 
-            {/* DRAWER HEADER */}
+            {/* HEADER */}
+
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5">
 
               <div>
@@ -821,8 +1271,11 @@ export default function ContactList() {
               </div>
 
               <button
+                type="button"
                 onClick={() =>
-                  setShowContactDetail(false)
+                  setShowContactDetail(
+                    false
+                  )
                 }
                 className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
               >
@@ -831,21 +1284,28 @@ export default function ContactList() {
 
             </div>
 
-            {/* DRAWER CONTENT */}
+            {/* CONTENT */}
+
             <div className="flex-1 overflow-y-auto p-6">
 
               {/* PROFILE */}
+
               <div className="mb-6 flex items-center gap-4">
 
                 <Avatar className="h-16 w-16">
 
                   <AvatarFallback className="bg-[#33245A] text-lg font-bold text-white">
+
                     {selectedContact.nama
                       .split(" ")
-                      .map((item) => item[0])
+                      .map(
+                        (item) =>
+                          item[0]
+                      )
                       .join("")
                       .slice(0, 2)
                       .toUpperCase()}
+
                   </AvatarFallback>
 
                 </Avatar>
@@ -857,7 +1317,9 @@ export default function ContactList() {
                   </h3>
 
                   <p className="text-sm text-gray-500">
-                    {selectedContact.perusahaan}
+                    {
+                      selectedContact.perusahaan
+                    }
                   </p>
 
                 </div>
@@ -865,6 +1327,7 @@ export default function ContactList() {
               </div>
 
               {/* CONTACT INFO */}
+
               <div className="space-y-3">
 
                 <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-3">
@@ -881,7 +1344,9 @@ export default function ContactList() {
                     </p>
 
                     <p className="text-sm font-medium text-gray-800">
-                      {selectedContact.perusahaan}
+                      {
+                        selectedContact.perusahaan
+                      }
                     </p>
 
                   </div>
@@ -902,7 +1367,9 @@ export default function ContactList() {
                     </p>
 
                     <p className="text-sm font-medium text-gray-800">
-                      {selectedContact.telepon}
+                      {
+                        selectedContact.telepon
+                      }
                     </p>
 
                   </div>
@@ -923,7 +1390,9 @@ export default function ContactList() {
                     </p>
 
                     <p className="text-sm font-medium text-gray-800">
-                      {selectedContact.email}
+                      {
+                        selectedContact.email
+                      }
                     </p>
 
                   </div>
@@ -932,7 +1401,10 @@ export default function ContactList() {
 
               </div>
 
-              {/* PRODUCT */}
+              {/* =================================================
+                  PRODUCT
+              ================================================= */}
+
               <div className="mt-7">
 
                 <div className="mb-3 flex items-center justify-between">
@@ -944,7 +1416,8 @@ export default function ContactList() {
                     </h3>
 
                     <p className="text-xs text-gray-500">
-                      Product yang digunakan contact
+                      Product yang digunakan
+                      contact
                     </p>
 
                   </div>
@@ -956,72 +1429,106 @@ export default function ContactList() {
 
                 </div>
 
-                <div className="space-y-3">
+                {/* GET PRODUCTS */}
 
-                  {selectedContact.productIds.length === 0 && (
+                {(() => {
+                  const contactProducts =
+                    getContactProducts(
+                      selectedContact
+                    )
 
-                    <div className="rounded-xl border border-dashed border-gray-300 p-5 text-center">
+                  if (
+                    contactProducts.length ===
+                    0
+                  ) {
+                    return (
+                      <div className="rounded-xl border border-dashed border-gray-300 p-5 text-center">
 
-                      <p className="text-sm text-gray-400">
-                        Belum ada product.
-                      </p>
+                        <Package
+                          size={24}
+                          className="mx-auto mb-2 text-gray-300"
+                        />
+
+                        <p className="text-sm font-medium text-gray-500">
+                          Belum ada product
+                        </p>
+
+                        <p className="mt-1 text-xs text-gray-400">
+                          Product dapat
+                          ditambahkan melalui
+                          halaman Products.
+                        </p>
+
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className="space-y-3">
+
+                      {contactProducts.map(
+                        (product) => (
+
+                          <button
+                            type="button"
+                            key={product.id}
+                            onClick={() =>
+                              openProductDetail(
+                                product
+                              )
+                            }
+                            className="group flex w-full items-center gap-3 rounded-2xl border border-gray-200 p-3 text-left transition hover:border-[#33245A] hover:bg-[#f8f6fc]"
+                          >
+
+                            <img
+                              src={getProductImage(
+                                product
+                              )}
+                              alt={getProductName(
+                                product
+                              )}
+                              className="h-16 w-20 rounded-xl object-cover"
+                            />
+
+                            <div className="flex-1">
+
+                              <p className="text-sm font-bold text-black">
+                                {getProductName(
+                                  product
+                                )}
+                              </p>
+
+                              <p className="text-xs text-gray-500">
+                                {product.brand ||
+                                  "-"}
+                                {product.model
+                                  ? ` • ${product.model}`
+                                  : ""}
+                              </p>
+
+                              {product.code && (
+                                <p className="mt-1 text-[11px] text-gray-400">
+                                  {
+                                    product.code
+                                  }
+                                </p>
+                              )}
+
+                            </div>
+
+                            <ChevronRight
+                              size={18}
+                              className="text-gray-400 transition group-hover:translate-x-1 group-hover:text-[#33245A]"
+                            />
+
+                          </button>
+
+                        )
+                      )}
 
                     </div>
-
-                  )}
-
-                  {selectedContact.productIds.map(
-                    (productId) => {
-
-                      const product =
-                        products.find(
-                          (item) =>
-                            item.id === productId
-                        )
-
-                      if (!product) return null
-
-                      return (
-
-                        <button
-                          key={product.id}
-                          onClick={() =>
-                            openProductDetail(product)
-                          }
-                          className="group flex w-full items-center gap-3 rounded-2xl border border-gray-200 p-3 text-left transition hover:border-[#33245A] hover:bg-[#f8f6fc]"
-                        >
-
-                          <img
-                            src={product.images[0]}
-                            alt={product.nama}
-                            className="h-16 w-20 rounded-xl object-cover"
-                          />
-
-                          <div className="flex-1">
-
-                            <p className="text-sm font-bold text-black">
-                              {product.nama}
-                            </p>
-
-                            <p className="text-xs text-gray-500">
-                              {product.brand} •{" "}
-                              {product.model}
-                            </p>
-
-                          </div>
-
-                          <ChevronRight
-                            size={18}
-                            className="text-gray-400 transition group-hover:translate-x-1 group-hover:text-[#33245A]"
-                          />
-
-                        </button>
-
-                      )
-                    }
-                  )}
-
-                </div>
+                  )
+                })()}
 
               </div>
 
@@ -1033,24 +1540,29 @@ export default function ContactList() {
 
       )}
 
-      {/* ========================= */}
-      {/* PRODUCT DETAIL */}
-      {/* ========================= */}
+      {/* ===================================================
+          PRODUCT DETAIL
+      =================================================== */}
 
-      {showProductDetail && selectedProductDetail && (
+      {showProductDetail &&
+        selectedProductDetail && (
 
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-6">
 
           <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
 
             {/* HEADER */}
+
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-7 py-5">
 
               <div className="flex items-center gap-3">
 
                 <button
+                  type="button"
                   onClick={() =>
-                    setShowProductDetail(false)
+                    setShowProductDetail(
+                      false
+                    )
                   }
                   className="rounded-full p-2 hover:bg-gray-100"
                 >
@@ -1064,7 +1576,9 @@ export default function ContactList() {
                   </p>
 
                   <h2 className="text-xl font-bold text-black">
-                    {selectedProductDetail.nama}
+                    {getProductName(
+                      selectedProductDetail
+                    )}
                   </h2>
 
                 </div>
@@ -1072,8 +1586,11 @@ export default function ContactList() {
               </div>
 
               <button
+                type="button"
                 onClick={() =>
-                  setShowProductDetail(false)
+                  setShowProductDetail(
+                    false
+                  )
                 }
                 className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
               >
@@ -1083,16 +1600,22 @@ export default function ContactList() {
             </div>
 
             {/* PRODUCT CONTENT */}
+
             <div className="grid gap-8 p-7 lg:grid-cols-[1.15fr_0.85fr]">
 
               {/* GALLERY */}
+
               <div>
 
                 <div className="mb-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
 
                   <img
-                    src={selectedProductDetail.images[0]}
-                    alt={selectedProductDetail.nama}
+                    src={getProductImage(
+                      selectedProductDetail
+                    )}
+                    alt={getProductName(
+                      selectedProductDetail
+                    )}
                     className="h-full w-full object-cover"
                   />
 
@@ -1100,43 +1623,112 @@ export default function ContactList() {
 
                 <div className="grid grid-cols-5 gap-3">
 
-                  {selectedProductDetail.images
+                  {getProductImages(
+                    selectedProductDetail
+                  )
                     .slice(0, 5)
-                    .map((image, index) => (
+                    .map(
+                      (
+                        image,
+                        index
+                      ) => (
 
-                      <div
-                        key={image}
-                        className="relative aspect-square overflow-hidden rounded-xl border border-gray-200 bg-gray-100"
-                      >
+                        <div
+                          key={`${image}-${index}`}
+                          className="relative aspect-square overflow-hidden rounded-xl border border-gray-200 bg-gray-100"
+                        >
 
-                        <img
-                          src={image}
-                          alt={`Product ${index + 1}`}
-                          className="h-full w-full object-cover"
-                        />
+                          <img
+                            src={image}
+                            alt={`Product ${
+                              index + 1
+                            }`}
+                            className="h-full w-full object-cover"
+                          />
 
-                        <span className="absolute bottom-1 left-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
-                          {index + 1}
-                        </span>
+                          <span className="absolute bottom-1 left-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+                            {index + 1}
+                          </span>
 
-                      </div>
+                        </div>
 
-                    ))}
+                      )
+                    )}
 
                 </div>
 
-                <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
-
-                  <ImageIcon size={14} />
-
-                  Maksimal 5 gambar product
-
+                <div className="mt-3 text-xs text-gray-400">
+                  Maksimal 5 gambar
+                  product
                 </div>
 
               </div>
 
               {/* INFO */}
+
               <div>
+
+                {/* CODE */}
+
+                {selectedProductDetail.code && (
+
+                  <div className="mb-5">
+
+                    <p className="text-sm font-medium text-gray-400">
+                      Product Code
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-black">
+                      {
+                        selectedProductDetail.code
+                      }
+                    </p>
+
+                  </div>
+
+                )}
+
+                {/* COMPANY */}
+
+                {selectedProductDetail.vendor && (
+
+                  <div className="mb-6">
+
+                    <p className="text-sm font-medium text-gray-400">
+                      Perusahaan
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-black">
+                      {
+                        selectedProductDetail.vendor
+                      }
+                    </p>
+
+                  </div>
+
+                )}
+
+                {/* CATEGORY */}
+
+                {selectedProductDetail.category && (
+
+                  <div className="mb-6">
+
+                    <p className="text-sm font-medium text-gray-400">
+                      Category
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-black">
+                      {
+                        selectedProductDetail.category
+                      }
+                    </p>
+
+                  </div>
+
+                )}
+
+                {/* BRAND */}
 
                 <div className="mb-6">
 
@@ -1145,38 +1737,79 @@ export default function ContactList() {
                   </p>
 
                   <p className="mt-1 text-lg font-bold text-black">
-                    {selectedProductDetail.brand}
+                    {
+                      selectedProductDetail.brand
+                    }
                   </p>
 
                 </div>
 
-                <div className="mb-6">
+                {/* MODEL */}
 
-                  <p className="text-sm font-medium text-gray-400">
-                    Model
-                  </p>
+                {selectedProductDetail.model && (
 
-                  <p className="mt-1 text-lg font-bold text-black">
-                    {selectedProductDetail.model}
-                  </p>
+                  <div className="mb-6">
 
-                </div>
+                    <p className="text-sm font-medium text-gray-400">
+                      Model
+                    </p>
 
-                <div>
-
-                  <p className="mb-2 text-sm font-medium text-gray-400">
-                    Deskripsi
-                  </p>
-
-                  <div className="rounded-2xl bg-gray-50 p-4">
-
-                    <p className="text-sm leading-6 text-gray-700">
-                      {selectedProductDetail.deskripsi}
+                    <p className="mt-1 text-lg font-bold text-black">
+                      {
+                        selectedProductDetail.model
+                      }
                     </p>
 
                   </div>
 
-                </div>
+                )}
+
+                {/* PRICE */}
+
+                {selectedProductDetail.price && (
+
+                  <div className="mb-6">
+
+                    <p className="text-sm font-medium text-gray-400">
+                      Price
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-black">
+                      Rp{" "}
+                      {
+                        selectedProductDetail.price
+                      }
+                    </p>
+
+                  </div>
+
+                )}
+
+                {/* DESCRIPTION */}
+
+                {selectedProductDetail.deskripsi && (
+
+                  <div>
+
+                    <p className="mb-2 text-sm font-medium text-gray-400">
+                      Deskripsi
+                    </p>
+
+                    <div className="rounded-2xl bg-gray-50 p-4">
+
+                      <p className="text-sm leading-6 text-gray-700">
+                        {
+                          selectedProductDetail.deskripsi
+                        }
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                )}
+
+                {/* INFO */}
 
                 <div className="mt-7 rounded-2xl bg-[#f1edfa] p-4">
 
@@ -1194,8 +1827,11 @@ export default function ContactList() {
                       </p>
 
                       <p className="text-xs text-gray-600">
-                        Detail product dapat dikembangkan
-                        lagi ketika backend sudah dibuat.
+                        Product ini terhubung
+                        dengan contact
+                        berdasarkan contact
+                        vendor yang dipilih
+                        saat product dibuat.
                       </p>
 
                     </div>
