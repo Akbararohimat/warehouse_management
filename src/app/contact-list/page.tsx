@@ -309,6 +309,14 @@ export default function ContactList() {
           Request Sales
         </Link>
 
+        <Link
+           href="/products"
+          className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm hover:bg-[#211344]"
+        >
+          <FileText size={18} />
+          Products
+        </Link>
+
         {/* PROFILE */}
         <div className="mt-auto">
 
@@ -542,11 +550,11 @@ export default function ContactList() {
               </div>
 
               <div>
-                NO. TELEPON
+                No.Telfon
               </div>
 
               <div>
-                EMAIL
+                Email
               </div>
 
             </div>

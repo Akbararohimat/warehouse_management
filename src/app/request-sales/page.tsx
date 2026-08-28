@@ -128,6 +128,14 @@ export default function RequestSales() {
           <span>Request Sales</span>
         </Link>
 
+        <Link
+           href="/products"
+           className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm hover:bg-[#211344]"
+        >
+          <FileText size={19} />
+          Products
+        </Link>
+
         {/* PROFILE */}
         <div className="mt-auto pt-5">
 

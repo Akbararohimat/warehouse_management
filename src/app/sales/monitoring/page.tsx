@@ -45,26 +45,6 @@ type TicketData = {
 
 const tickets: TicketData[] = [
   {
-    id: "#001",
-    customer: "PT.PTan",
-    product: "Router",
-    request: "Request Router",
-    date: "19/02/2027",
-    status: "Pending",
-    description:
-      "Customer membutuhkan router baru untuk kebutuhan jaringan kantor.",
-  },
-  {
-    id: "#002",
-    customer: "PT.ABC",
-    product: "Switch",
-    request: "Request Switch",
-    date: "18/02/2027",
-    status: "Diproses",
-    description:
-      "Request switch tambahan untuk penambahan perangkat jaringan.",
-  },
-  {
     id: "#003",
     customer: "PT.Network",
     product: "Access Point",

@@ -18,7 +18,8 @@ type Product = {
     name: string;
     vendor: string;
     category: string;
-    stock: number;
+    brand: string;
+    price: string;
     status: "Active" | "Inactive";
     image: string;
 };
@@ -27,36 +28,40 @@ const initialProducts: Product[] = [
     {
         code: "PRD-001",
         name: "Fiber Optic Cable 12 Core",
-        vendor: "Vendor A",
+        vendor: "PT.ABC",
         category: "Fiber Optic",
-        stock: 28,
+        brand: "Furukawa",
+        price: "150000",
         status: "Active",
         image: "https://placehold.co/100x100?text=FO",
     },
     {
         code: "PRD-002",
         name: "Router Mikrotik",
-        vendor: "Vendor B",
+        vendor: "PT.ACB",
         category: "Network",
-        stock: 15,
+        brand: "MikroTik",
+        price: "2500000",
         status: "Active",
         image: "https://placehold.co/100x100?text=RT",
     },
     {
         code: "PRD-003",
         name: "Optical Distribution Box",
-        vendor: "Vendor A",
+        vendor: "PT.DCA",
         category: "Fiber Optic",
-        stock: 8,
+        brand: "CommScope",
+        price: "450000",
         status: "Active",
         image: "https://placehold.co/100x100?text=OD",
     },
     {
         code: "PRD-004",
         name: "Network Switch 24 Port",
-        vendor: "Vendor C",
+        vendor: "PT.CDC",
         category: "Network",
-        stock: 12,
+        brand: "TP-Link",
+        price: "850000",
         status: "Inactive",
         image: "https://placehold.co/100x100?text=SW",
     },
@@ -64,7 +69,7 @@ const initialProducts: Product[] = [
 
 export default function ProductsPage() {
     const [search, setSearch] = useState("");
-    const [vendorFilter, setVendorFilter] = useState("All Vendors");
+    const [vendorFilter, setVendorFilter] = useState("All Perusahaan");
     const [categoryFilter, setCategoryFilter] = useState("All Categories");
     const [statusFilter, setStatusFilter] = useState("All Status");
 
@@ -77,13 +82,14 @@ export default function ProductsPage() {
     const [productName, setProductName] = useState("");
     const [vendor, setVendor] = useState("");
     const [category, setCategory] = useState("");
-    const [stock, setStock] = useState("");
+    const [brand, setBrand] = useState("");
+    const [price, setPrice] = useState("");
     const [image, setImage] = useState<string | null>(null);
     const [imageName, setImageName] = useState("");
 
     const vendors = useMemo(
         () => [
-            "All Vendors",
+            "All Perusahaan",
             ...Array.from(
                 new Set(products.map((product) => product.vendor))
             ),
@@ -122,7 +128,7 @@ export default function ProductsPage() {
             product.category.toLowerCase().includes(keyword);
 
         const matchesVendor =
-            vendorFilter === "All Vendors" ||
+            vendorFilter === "All Perusahaan" ||
             product.vendor === vendorFilter;
 
         const matchesCategory =
@@ -158,7 +164,8 @@ export default function ProductsPage() {
         setProductName("");
         setVendor("");
         setCategory("");
-        setStock("");
+        setBrand("");
+        setPrice("");
         setImage(null);
         setImageName("");
     };
@@ -173,7 +180,8 @@ export default function ProductsPage() {
             !productName.trim() ||
             !vendor.trim() ||
             !category.trim() ||
-            !stock.trim()
+            !brand.trim() ||
+            !price.trim()
         ) {
             return;
         }
@@ -186,7 +194,8 @@ export default function ProductsPage() {
             name: productName.trim(),
             vendor: vendor.trim(),
             category: category.trim(),
-            stock: Number(stock),
+            brand: brand.trim(),
+            price: price.trim(),
             status: "Active",
             image:
                 image ??
@@ -255,7 +264,7 @@ export default function ProductsPage() {
                                 onChange={(e) =>
                                     setSearch(e.target.value)
                                 }
-                                placeholder="Search product, vendor, category..."
+                                placeholder="Search product, perusahaan, category..."
                                 className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#0D0628] focus:ring-1 focus:ring-[#0D0628]"
                             />
                         </div>
@@ -308,7 +317,7 @@ export default function ProductsPage() {
                                     </th>
 
                                     <th className="px-5 py-3 text-left font-medium text-slate-500">
-                                        Vendor
+                                        Perusahaan
                                     </th>
 
                                     <th className="px-5 py-3 text-left font-medium text-slate-500">
@@ -316,7 +325,11 @@ export default function ProductsPage() {
                                     </th>
 
                                     <th className="px-5 py-3 text-left font-medium text-slate-500">
-                                        Stock
+                                        Brand
+                                    </th>
+
+                                    <th className="px-5 py-3 text-left font-medium text-slate-500">
+                                        Price
                                     </th>
 
                                     <th className="px-5 py-3 text-left font-medium text-slate-500">
@@ -379,8 +392,12 @@ export default function ProductsPage() {
 
                                                 <td className="px-5 py-4 font-medium text-slate-700">
                                                     {
-                                                        product.stock
+                                                        product.brand
                                                     }
+                                                </td>
+
+                                                <td className="px-5 py-4 text-slate-500">
+                                                    Rp {product.price}
                                                 </td>
 
                                                 <td className="px-5 py-4">
@@ -398,7 +415,7 @@ export default function ProductsPage() {
                                                     </span>
                                                 </td>
 
-                                                <td className="px-5 py-4 text-right">
+                                                <td className="whitespace-nowrap px-5 py-3 text-right">
                                                     <Link
                                                         href={`/products/${product.code}`}
                                                         className="inline-flex items-center gap-2 rounded-lg border border-[#0D0628]/20 px-3 py-2 text-xs font-medium text-[#0D0628] transition hover:bg-[#0D0628] hover:text-white"
@@ -413,7 +430,7 @@ export default function ProductsPage() {
                                 ) : (
                                     <tr>
                                         <td
-                                            colSpan={7}
+                                            colSpan={8}
                                             className="px-5 py-12 text-center"
                                         >
                                             <Package className="mx-auto h-8 w-8 text-slate-300" />
@@ -539,7 +556,7 @@ export default function ProductsPage() {
 
                                     <div>
                                         <label className="mb-2 block text-sm font-medium text-slate-700">
-                                            Vendor
+                                            Perusahaan
                                         </label>
 
                                         <input
@@ -551,11 +568,11 @@ export default function ProductsPage() {
                                                 )
                                             }
                                             placeholder="Contoh: Huawei"
-                                            className="h-11 w-full rounded-lg border border-slate-200 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0D0628] focus:ring-1 focus:ring-[#0D0628]"
+                                            className="h-11 w-45 rounded-lg border border-slate-200 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0D0628] focus:ring-1 focus:ring-[#0D0628]"
                                         />
                                     </div>
 
-                                    <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="grid gap-4 sm:grid-cols-3 space-y-4">
                                         <div>
                                             <label className="mb-2 block text-sm font-medium text-slate-700">
                                                 Category
@@ -579,20 +596,38 @@ export default function ProductsPage() {
 
                                         <div>
                                             <label className="mb-2 block text-sm font-medium text-slate-700">
-                                                Stock
+                                                Brand
+                                            </label>
+
+                                            <input
+                                                type="Text"
+                                                value={
+                                                    brand
+                                                }
+                                                onChange={(e) =>
+                                                    setBrand(
+                                                        e.target
+                                                            .value
+                                                    )
+                                                }
+                                                placeholder="Contoh: Mikrotik"
+                                                className="h-11 w-full rounded-lg border border-slate-200 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0D0628] focus:ring-1 focus:ring-[#0D0628]"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="mb-2 block text-sm font-medium text-slate-700">
+                                                Price
                                             </label>
 
                                             <input
                                                 type="number"
                                                 min="0"
-                                                value={stock}
+                                                value={price}
                                                 onChange={(e) =>
-                                                    setStock(
-                                                        e.target
-                                                            .value
-                                                    )
+                                                    setPrice(e.target.value)
                                                 }
-                                                placeholder="0"
+                                                placeholder="Contoh: 150000"
                                                 className="h-11 w-full rounded-lg border border-slate-200 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0D0628] focus:ring-1 focus:ring-[#0D0628]"
                                             />
                                         </div>
@@ -617,7 +652,8 @@ export default function ProductsPage() {
                                     !productName.trim() ||
                                     !vendor.trim() ||
                                     !category.trim() ||
-                                    !stock.trim()
+                                    !brand.trim() ||
+                                    !price.trim()
                                 }
                                 className="rounded-lg bg-[#0D0628] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#1A0D45] disabled:cursor-not-allowed disabled:opacity-40"
                             >

@@ -247,7 +247,7 @@ export default function SalesDashboard() {
               </div>
 
               <p className="text-2xl font-bold text-black">
-                12
+                0
               </p>
 
               <p className="text-sm text-gray-600">
@@ -264,7 +264,7 @@ export default function SalesDashboard() {
               </div>
 
               <p className="text-2xl font-bold text-black">
-                5
+                0
               </p>
 
               <p className="text-sm text-gray-600">
@@ -281,7 +281,7 @@ export default function SalesDashboard() {
               </div>
 
               <p className="text-2xl font-bold text-black">
-                7
+                0
               </p>
 
               <p className="text-sm text-gray-600">
@@ -384,7 +384,7 @@ export default function SalesDashboard() {
                   </div>
 
                   <span className="text-sm font-bold text-black">
-                    5
+                    0
                   </span>
 
                 </div>
@@ -403,7 +403,7 @@ export default function SalesDashboard() {
                   </div>
 
                   <span className="text-sm font-bold text-black">
-                    4
+                    0
                   </span>
 
                 </div>
@@ -422,7 +422,7 @@ export default function SalesDashboard() {
                   </div>
 
                   <span className="text-sm font-bold text-black">
-                    3
+                    0
                   </span>
 
                 </div>
@@ -437,7 +437,7 @@ export default function SalesDashboard() {
                 </p>
 
                 <p className="mt-1 text-2xl font-bold text-black">
-                  12
+                  0
                 </p>
 
               </div>

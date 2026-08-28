@@ -162,7 +162,7 @@ export default function Dashboard() {
 
         <Link
           href="/products"
-          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344">
+          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]">
             <FileText size={19} />
 
             <span>
@@ -381,9 +381,30 @@ export default function Dashboard() {
 
             </div>
 
+            <div className="h-28 w-64 rounded-2xl bg-white p-6 shadow-md">
+              
+              <p className="text-3xl font-bold text-black">
+                0
+              </p>
+
+              <p className="mt-1 text-sm text-gray-700">
+                Request Done
+              </p>
+            </div>
+
+            <div className="h-28 w-64 rounded-2xl bg-white p-6 shadow-md">
+              <p className="text-3xl font-bold text-black">
+                0
+              </p>
+
+              <p className="mt-1 text-sm text-gray-700">
+                Request Pending
+              </p>
+            </div>
+
           </div>
 
-          <div className="mt-6 h-64 max-w-[850px] rounded-2xl bg-white p-6 shadow-md">
+          <div className="mt-6 h-64 max-w-[600px] rounded-2xl bg-white p-6 shadow-md">
 
 
             <div className="flex items-center justify-between">
@@ -397,7 +418,6 @@ export default function Dashboard() {
               </button>
 
             </div>
-
 
             <div className="mt-4 flex items-center justify-between border-b border-gray-300 pb-4">
 
