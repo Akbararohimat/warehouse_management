@@ -170,6 +170,16 @@ export default function Dashboard() {
             </span>
           </Link>
 
+        <Link
+          href="/principal"
+          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]">
+            <FileText size={19} />
+
+            <span>
+              Vendor/Principal
+            </span>
+          </Link>
+
         <div className="mt-6 border-t border-white/10 pt-5">
         </div>
 

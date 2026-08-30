@@ -38,9 +38,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-/* =========================================================
-   TYPES
-========================================================= */
+type Principal = {
+  id: number
+  principal: string
+  brands: string[]
+  catalogue?: string
+  catalogueName?: string
+}
 
 type Product = {
   id: number
@@ -49,6 +53,7 @@ type Product = {
   nama?: string
   vendor?: string
   vendorContactId?: number | null
+  principalId?: number | null
   category?: string
   brand: string
   model?: string
@@ -63,20 +68,18 @@ type Contact = {
   id: number
   nama: string
   perusahaan: string
+  principalId?: number | null
   telepon: string
   email: string
   productIds: number[]
 }
-
-/* =========================================================
-   INITIAL CONTACTS
-========================================================= */
 
 const initialContacts: Contact[] = [
   {
     id: 1,
     nama: "Akbar arohimat",
     perusahaan: "PT.PTan",
+    principalId: null,
     telepon: "08888888",
     email: "akbar@gmail.com",
     productIds: [],
@@ -85,6 +88,7 @@ const initialContacts: Contact[] = [
     id: 2,
     nama: "Akbar Versi 2",
     perusahaan: "PT. ABC",
+    principalId: null,
     telepon: "08123456789",
     email: "akbar2@gmail.com",
     productIds: [],
@@ -93,15 +97,12 @@ const initialContacts: Contact[] = [
     id: 3,
     nama: "Akbar Versi 3",
     perusahaan: "PT. Jaya",
+    principalId: null,
     telepon: "08234567890",
     email: "akbar3@gmail.com",
     productIds: [],
   },
 ]
-
-/* =========================================================
-   INITIAL PRODUCTS
-========================================================= */
 
 const initialProducts: Product[] = [
   {
@@ -110,6 +111,7 @@ const initialProducts: Product[] = [
     name: "Fiber Optic Cable 12 Core",
     vendor: "PT.ABC",
     vendorContactId: null,
+    principalId: null,
     category: "Fiber Optic",
     brand: "Furukawa",
     price: "150000",
@@ -125,6 +127,7 @@ const initialProducts: Product[] = [
     name: "Router Mikrotik",
     vendor: "PT.ACB",
     vendorContactId: null,
+    principalId: null,
     category: "Network",
     brand: "MikroTik",
     price: "2500000",
@@ -140,6 +143,7 @@ const initialProducts: Product[] = [
     name: "Optical Distribution Box",
     vendor: "PT.DCA",
     vendorContactId: null,
+    principalId: null,
     category: "Fiber Optic",
     brand: "CommScope",
     price: "450000",
@@ -155,6 +159,7 @@ const initialProducts: Product[] = [
     name: "Network Switch 24 Port",
     vendor: "PT.CDC",
     vendorContactId: null,
+    principalId: null,
     category: "Network",
     brand: "TP-Link",
     price: "850000",
@@ -166,11 +171,13 @@ const initialProducts: Product[] = [
   },
 ]
 
-/* =========================================================
-   HELPER
-========================================================= */
+function getProductName(
+  product?: Partial<Product> | null
+) {
+  if (!product || typeof product !== "object") {
+    return "Unnamed Product"
+  }
 
-function getProductName(product: Product) {
   return product.name || product.nama || "Unnamed Product"
 }
 
@@ -205,56 +212,33 @@ function getProductImages(product: Product) {
   return [getProductImage(product)]
 }
 
-/* =========================================================
-   COMPONENT
-========================================================= */
-
 export default function ContactList() {
   const router = useRouter()
-
-  /* =======================================================
-     STATE
-  ======================================================= */
-
   const [search, setSearch] = useState("")
-
   const [selectedProduct, setSelectedProduct] =
     useState("Semua Product")
-
+  const [selectedPrincipal, setSelectedPrincipal] =
+    useState("Semua Principal")
   const [showForm, setShowForm] = useState(false)
-
   const [showContactDetail, setShowContactDetail] =
     useState(false)
-
   const [showProductDetail, setShowProductDetail] =
     useState(false)
-
   const [selectedContact, setSelectedContact] =
     useState<Contact | null>(null)
-
   const [selectedProductDetail, setSelectedProductDetail] =
     useState<Product | null>(null)
-
   const [contacts, setContacts] =
     useState<Contact[]>(initialContacts)
-
   const [products, setProducts] =
     useState<Product[]>(initialProducts)
-
+  const [principals, setPrincipals] =
+    useState<Principal[]>([])
   const [hydrated, setHydrated] = useState(false)
-
-  /* =======================================================
-     CONTACT FORM
-  ======================================================= */
-
   const [nama, setNama] = useState("")
-  const [perusahaan, setPerusahaan] = useState("")
+  const [principalId, setPrincipalId] = useState("")
   const [telepon, setTelepon] = useState("")
   const [email, setEmail] = useState("")
-
-  /* =======================================================
-     LOAD LOCAL STORAGE
-  ======================================================= */
 
   useEffect(() => {
     try {
@@ -263,6 +247,9 @@ export default function ContactList() {
 
       const storedProducts =
         localStorage.getItem("rnd_products")
+
+      const storedPrincipals =
+        localStorage.getItem("rnd_principals")
 
       if (storedContacts) {
         const parsedContacts =
@@ -291,6 +278,15 @@ export default function ContactList() {
           JSON.stringify(initialProducts)
         )
       }
+
+      if (storedPrincipals) {
+        const parsedPrincipals =
+          JSON.parse(storedPrincipals)
+
+        if (Array.isArray(parsedPrincipals)) {
+          setPrincipals(parsedPrincipals)
+        }
+      }
     } catch (error) {
       console.error(
         "Gagal membaca localStorage:",
@@ -301,9 +297,31 @@ export default function ContactList() {
     setHydrated(true)
   }, [])
 
-  /* =======================================================
-     SAVE CONTACTS
-  ======================================================= */
+  useEffect(() => {
+    if (!hydrated) return
+
+    const params = new URLSearchParams(
+      window.location.search
+    )
+
+    const principalFromUrl =
+      params.get("principal")
+
+    if (!principalFromUrl) return
+
+    const foundPrincipal =
+      principals.find(
+        (principal) =>
+          String(principal.id) ===
+          principalFromUrl
+      )
+
+    if (foundPrincipal) {
+      setSelectedPrincipal(
+        foundPrincipal.principal
+      )
+    }
+  }, [hydrated, principals])
 
   useEffect(() => {
     if (!hydrated) return
@@ -313,11 +331,6 @@ export default function ContactList() {
       JSON.stringify(contacts)
     )
   }, [contacts, hydrated])
-
-  /* =======================================================
-     SAVE PRODUCTS
-  ======================================================= */
-
   useEffect(() => {
     if (!hydrated) return
 
@@ -327,10 +340,6 @@ export default function ContactList() {
     )
   }, [products, hydrated])
 
-  /* =======================================================
-     SYNC DATA WHEN TAB/FLOW CHANGES
-  ======================================================= */
-
   useEffect(() => {
     const syncData = () => {
       try {
@@ -339,6 +348,9 @@ export default function ContactList() {
 
         const storedProducts =
           localStorage.getItem("rnd_products")
+
+        const storedPrincipals =
+          localStorage.getItem("rnd_principals")
 
         if (storedContacts) {
           const parsedContacts =
@@ -355,6 +367,15 @@ export default function ContactList() {
 
           if (Array.isArray(parsedProducts)) {
             setProducts(parsedProducts)
+          }
+        }
+
+        if (storedPrincipals) {
+          const parsedPrincipals =
+            JSON.parse(storedPrincipals)
+
+          if (Array.isArray(parsedPrincipals)) {
+            setPrincipals(parsedPrincipals)
           }
         }
       } catch (error) {
@@ -388,10 +409,6 @@ export default function ContactList() {
     }
   }, [])
 
-  /* =======================================================
-     RELOAD DATA
-  ======================================================= */
-
   const reloadData = () => {
     try {
       const storedContacts =
@@ -399,6 +416,9 @@ export default function ContactList() {
 
       const storedProducts =
         localStorage.getItem("rnd_products")
+
+      const storedPrincipals =
+        localStorage.getItem("rnd_principals")
 
       if (storedContacts) {
         const parsedContacts =
@@ -417,6 +437,15 @@ export default function ContactList() {
           setProducts(parsedProducts)
         }
       }
+
+      if (storedPrincipals) {
+        const parsedPrincipals =
+          JSON.parse(storedPrincipals)
+
+        if (Array.isArray(parsedPrincipals)) {
+          setPrincipals(parsedPrincipals)
+        }
+      }
     } catch (error) {
       console.error(
         "Gagal reload data:",
@@ -425,24 +454,55 @@ export default function ContactList() {
     }
   }
 
-  /* =======================================================
-     ADD CONTACT
-  ======================================================= */
+  const getPrincipalName = (
+    id?: number | null
+  ) => {
+    if (!id) return ""
+
+    const principal =
+      principals.find(
+        (item) => item.id === id
+      )
+
+    return principal?.principal || ""
+  }
 
   const handleAddContact = () => {
     if (
       !nama.trim() ||
-      !perusahaan.trim() ||
+      !principalId ||
       !telepon.trim() ||
       !email.trim()
     ) {
       return
     }
 
+    const selectedPrincipalData =
+      principals.find(
+        (item) =>
+          String(item.id) === principalId
+      )
+
+    if (!selectedPrincipalData) {
+      return
+    }
+
     const newContact: Contact = {
       id: Date.now(),
       nama: nama.trim(),
-      perusahaan: perusahaan.trim(),
+
+      /*
+       * Perusahaan tetap disimpan untuk
+       * kompatibilitas data lama.
+       *
+       * Sumber utamanya tetap principalId.
+       */
+      perusahaan:
+        selectedPrincipalData.principal,
+
+      principalId:
+        selectedPrincipalData.id,
+
       telepon: telepon.trim(),
       email: email.trim(),
       productIds: [],
@@ -454,16 +514,12 @@ export default function ContactList() {
     ])
 
     setNama("")
-    setPerusahaan("")
+    setPrincipalId("")
     setTelepon("")
     setEmail("")
 
     setShowForm(false)
   }
-
-  /* =======================================================
-     DELETE CONTACT
-  ======================================================= */
 
   const handleDeleteContact = () => {
     if (!selectedContact) return
@@ -509,9 +565,30 @@ export default function ContactList() {
     setShowContactDetail(false)
   }
 
-  /* =======================================================
-     FILTER CONTACTS
-  ======================================================= */
+  const principalOptions = useMemo(() => {
+    return [
+      "Semua Principal",
+      ...principals.map(
+        (principal) =>
+          principal.principal
+      ),
+    ]
+  }, [principals])
+
+  const productOptions = useMemo(() => {
+    const names = products
+      .map((product) =>
+        getProductName(product)
+      )
+      .filter(Boolean)
+
+    return [
+      "Semua Product",
+      ...Array.from(
+        new Set(names)
+      ),
+    ]
+  }, [products])
 
   const filteredContacts =
     contacts.filter((contact) => {
@@ -533,7 +610,7 @@ export default function ContactList() {
       const matchesProduct =
         selectedProduct ===
           "Semua Product" ||
-        contact.productIds.some(
+        contact.productIds?.some(
           (productId) => {
             const product =
               products.find(
@@ -555,15 +632,21 @@ export default function ContactList() {
               selectedProduct
         )
 
+      const matchesPrincipal =
+        selectedPrincipal ===
+          "Semua Principal" ||
+        contact.perusahaan ===
+          selectedPrincipal ||
+        getPrincipalName(
+          contact.principalId
+        ) === selectedPrincipal
+
       return (
         matchesSearch &&
-        matchesProduct
+        matchesProduct &&
+        matchesPrincipal
       )
     })
-
-  /* =======================================================
-     OPEN CONTACT DETAIL
-  ======================================================= */
 
   const openContactDetail = (
     contact: Contact
@@ -602,19 +685,6 @@ export default function ContactList() {
 
     setShowContactDetail(true)
   }
-
-  /* =======================================================
-     GET CONTACT PRODUCTS
-     
-     Produk dianggap milik contact jika:
-     1. productIds berisi product.id
-     ATAU
-     2. product.vendorContactId === contact.id
-     
-     Jadi meskipun contactIds belum tersimpan
-     ke object contact, product tetap muncul.
-  ======================================================= */
-
   const getContactProducts = (
     contact: Contact
   ) => {
@@ -637,46 +707,14 @@ export default function ContactList() {
     )
   }
 
-  /* =======================================================
-     OPEN PRODUCT DETAIL
-  ======================================================= */
-
   const openProductDetail = (
     product: Product
   ) => {
     setSelectedProductDetail(product)
     setShowProductDetail(true)
   }
-
-  /* =======================================================
-     PRODUCT OPTIONS
-  ======================================================= */
-
-  const productOptions = useMemo(() => {
-    const names = products
-      .map((product) =>
-        getProductName(product)
-      )
-      .filter(Boolean)
-
-    return [
-      "Semua Product",
-      ...Array.from(
-        new Set(names)
-      ),
-    ]
-  }, [products])
-
-  /* =======================================================
-     RETURN
-  ======================================================= */
-
   return (
     <main className="flex min-h-screen bg-gray-100">
-
-      {/* ===================================================
-          SIDEBAR
-      =================================================== */}
 
       <aside className="flex w-68 flex-col bg-[#10052D] px-5 py-6 text-white">
 
@@ -726,6 +764,14 @@ export default function ContactList() {
         >
           <Package size={18} />
           Products
+        </Link>
+
+        <Link
+          href="/principal"
+          className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm hover:bg-[#211344]"
+        >
+          <FileText size={18} />
+          Vendor/Principal
         </Link>
 
         {/* PROFILE */}
@@ -811,14 +857,7 @@ export default function ContactList() {
         </div>
 
       </aside>
-
-      {/* ===================================================
-          MAIN
-      =================================================== */}
-
       <section className="flex-1">
-
-        {/* HEADER */}
 
         <header className="flex h-20 items-center justify-between bg-white px-8">
 
@@ -880,17 +919,11 @@ export default function ContactList() {
 
         </header>
 
-        {/* CONTENT */}
-
         <div className="p-8">
-
-          {/* TOP ACTION */}
 
           <div className="mb-4 flex items-center justify-between">
 
             <div className="flex items-center gap-3">
-
-              {/* SEARCH */}
 
               <div className="flex h-11 w-72 items-center gap-2 rounded-full bg-white px-4 shadow-md">
 
@@ -913,7 +946,44 @@ export default function ContactList() {
 
               </div>
 
-              {/* PRODUCT FILTER */}
+              <div className="relative">
+
+                <select
+                  value={
+                    selectedPrincipal
+                  }
+                  onChange={(e) =>
+                    setSelectedPrincipal(
+                      e.target.value
+                    )
+                  }
+                  className="h-11 appearance-none rounded-full border-none bg-white pl-11 pr-10 text-sm font-medium text-gray-700 shadow-md outline-none"
+                >
+
+                  {principalOptions.map(
+                    (principalName) => (
+                      <option
+                        key={principalName}
+                        value={principalName}
+                      >
+                        {principalName}
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+                <Building2
+                  size={17}
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+                />
+
+                <ChevronDown
+                  size={16}
+                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                />
+
+              </div>
 
               <div className="relative">
 
@@ -957,9 +1027,6 @@ export default function ContactList() {
             </div>
 
             <div className="flex items-center gap-3">
-
-              {/* DELETE */}
-
               <button
                 type="button"
                 onClick={
@@ -972,8 +1039,6 @@ export default function ContactList() {
               >
                 <Trash2 size={21} />
               </button>
-
-              {/* ADD */}
 
               <button
                 type="button"
@@ -990,11 +1055,6 @@ export default function ContactList() {
             </div>
 
           </div>
-
-          {/* =================================================
-              CONTACT TABLE
-          ================================================= */}
-
           <div className="min-h-[520px] rounded-2xl bg-white p-5 shadow-md">
 
             <div className="grid grid-cols-[1.2fr_1.2fr_1fr_1.3fr] border-b border-gray-400 pb-3 text-sm font-bold text-black">
@@ -1070,11 +1130,6 @@ export default function ContactList() {
         </div>
 
       </section>
-
-      {/* ===================================================
-          ADD CONTACT MODAL
-      =================================================== */}
-
       {showForm && (
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -1109,8 +1164,6 @@ export default function ContactList() {
 
             <div className="space-y-4">
 
-              {/* NAMA */}
-
               <div>
 
                 <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -1130,29 +1183,69 @@ export default function ContactList() {
 
               </div>
 
-              {/* PERUSAHAAN */}
-
               <div>
 
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                   Perusahaan
                 </label>
 
-                <input
-                  value={perusahaan}
-                  onChange={(e) =>
-                    setPerusahaan(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Nama perusahaan"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-black outline-none focus:border-[#33245A]"
-                />
+                <div className="relative">
+
+                  <select
+                    value={principalId}
+                    onChange={(e) =>
+                      setPrincipalId(
+                        e.target.value
+                      )
+                    }
+                    disabled={
+                      principals.length === 0
+                    }
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 pr-10 text-sm text-black outline-none focus:border-[#33245A] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                  >
+
+                    <option value="">
+                      {principals.length === 0
+                        ? "Belum ada Principal"
+                        : "Pilih contact vendor"}
+                    </option>
+
+                    {principals.map(
+                      (principal) => (
+
+                        <option
+                          key={principal.id}
+                          value={principal.id}
+                        >
+                          {
+                            principal.principal
+                          }
+                        </option>
+
+                      )
+                    )}
+
+                  </select>
+
+                  <ChevronDown
+                    size={17}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                  />
+
+                </div>
+
+                {principals.length ===
+                  0 && (
+
+                  <p className="mt-1 text-xs text-red-500">
+                    Tambahkan Principal
+                    terlebih dahulu di
+                    Vendor/Principal.
+                  </p>
+
+                )}
 
               </div>
-
-              {/* TELEPON */}
-
               <div>
 
                 <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -1171,8 +1264,6 @@ export default function ContactList() {
                 />
 
               </div>
-
-              {/* EMAIL */}
 
               <div>
 
@@ -1215,7 +1306,7 @@ export default function ContactList() {
                 }
                 disabled={
                   !nama.trim() ||
-                  !perusahaan.trim() ||
+                  !principalId ||
                   !telepon.trim() ||
                   !email.trim()
                 }
@@ -1231,11 +1322,6 @@ export default function ContactList() {
         </div>
 
       )}
-
-      {/* ===================================================
-          CONTACT DETAIL DRAWER
-      =================================================== */}
-
       {showContactDetail &&
         selectedContact && (
 
@@ -1253,8 +1339,6 @@ export default function ContactList() {
           />
 
           <aside className="absolute right-0 top-0 flex h-full w-[430px] flex-col bg-white shadow-2xl">
-
-            {/* HEADER */}
 
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5">
 
@@ -1284,12 +1368,7 @@ export default function ContactList() {
 
             </div>
 
-            {/* CONTENT */}
-
             <div className="flex-1 overflow-y-auto p-6">
-
-              {/* PROFILE */}
-
               <div className="mb-6 flex items-center gap-4">
 
                 <Avatar className="h-16 w-16">
@@ -1325,9 +1404,6 @@ export default function ContactList() {
                 </div>
 
               </div>
-
-              {/* CONTACT INFO */}
-
               <div className="space-y-3">
 
                 <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-3">
@@ -1400,11 +1476,6 @@ export default function ContactList() {
                 </div>
 
               </div>
-
-              {/* =================================================
-                  PRODUCT
-              ================================================= */}
-
               <div className="mt-7">
 
                 <div className="mb-3 flex items-center justify-between">
@@ -1428,8 +1499,6 @@ export default function ContactList() {
                   />
 
                 </div>
-
-                {/* GET PRODUCTS */}
 
                 {(() => {
                   const contactProducts =
@@ -1539,20 +1608,12 @@ export default function ContactList() {
         </div>
 
       )}
-
-      {/* ===================================================
-          PRODUCT DETAIL
-      =================================================== */}
-
       {showProductDetail &&
         selectedProductDetail && (
 
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-6">
 
           <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
-
-            {/* HEADER */}
-
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-7 py-5">
 
               <div className="flex items-center gap-3">
@@ -1598,13 +1659,7 @@ export default function ContactList() {
               </button>
 
             </div>
-
-            {/* PRODUCT CONTENT */}
-
             <div className="grid gap-8 p-7 lg:grid-cols-[1.15fr_0.85fr]">
-
-              {/* GALLERY */}
-
               <div>
 
                 <div className="mb-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
@@ -1663,12 +1718,7 @@ export default function ContactList() {
                 </div>
 
               </div>
-
-              {/* INFO */}
-
               <div>
-
-                {/* CODE */}
 
                 {selectedProductDetail.code && (
 
@@ -1688,8 +1738,6 @@ export default function ContactList() {
 
                 )}
 
-                {/* COMPANY */}
-
                 {selectedProductDetail.vendor && (
 
                   <div className="mb-6">
@@ -1707,8 +1755,6 @@ export default function ContactList() {
                   </div>
 
                 )}
-
-                {/* CATEGORY */}
 
                 {selectedProductDetail.category && (
 
@@ -1728,8 +1774,6 @@ export default function ContactList() {
 
                 )}
 
-                {/* BRAND */}
-
                 <div className="mb-6">
 
                   <p className="text-sm font-medium text-gray-400">
@@ -1743,8 +1787,6 @@ export default function ContactList() {
                   </p>
 
                 </div>
-
-                {/* MODEL */}
 
                 {selectedProductDetail.model && (
 
@@ -1764,8 +1806,6 @@ export default function ContactList() {
 
                 )}
 
-                {/* PRICE */}
-
                 {selectedProductDetail.price && (
 
                   <div className="mb-6">
@@ -1784,8 +1824,6 @@ export default function ContactList() {
                   </div>
 
                 )}
-
-                {/* DESCRIPTION */}
 
                 {selectedProductDetail.deskripsi && (
 
@@ -1808,8 +1846,6 @@ export default function ContactList() {
                   </div>
 
                 )}
-
-                {/* INFO */}
 
                 <div className="mt-7 rounded-2xl bg-[#f1edfa] p-4">
 

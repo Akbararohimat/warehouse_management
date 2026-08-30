@@ -133,8 +133,15 @@ export default function RequestSales() {
            className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm hover:bg-[#211344]"
         >
           <FileText size={19} />
-          Products
+          <span>Products</span>
         </Link>
+
+        <Link
+           href="/principal"
+           className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm hover:bg-[#211344]">
+            <FileText size={19} />
+            <span>Vendor/Principal</span>
+           </Link>
 
         {/* PROFILE */}
         <div className="mt-auto pt-5">
