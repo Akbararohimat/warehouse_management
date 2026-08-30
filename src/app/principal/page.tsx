@@ -37,10 +37,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-/* =========================================================
-   TYPES
-========================================================= */
-
 type Principal = {
   id: number
   principal: string
@@ -49,17 +45,8 @@ type Principal = {
   catalogueName?: string
 }
 
-/* =========================================================
-   COMPONENT
-========================================================= */
-
 export default function PrincipalPage() {
   const router = useRouter()
-
-  /* =======================================================
-     STATE
-  ======================================================= */
-
   const [principals, setPrincipals] =
     useState<Principal[]>([])
 
@@ -76,11 +63,6 @@ export default function PrincipalPage() {
 
   const [hydrated, setHydrated] =
     useState(false)
-
-  /* =======================================================
-     FORM STATE
-  ======================================================= */
-
   const [principalName, setPrincipalName] =
     useState("")
 
@@ -92,10 +74,6 @@ export default function PrincipalPage() {
 
   const [catalogueData, setCatalogueData] =
     useState("")
-
-  /* =======================================================
-     LOAD DATA
-  ======================================================= */
 
   useEffect(() => {
     try {
@@ -122,10 +100,6 @@ export default function PrincipalPage() {
     setHydrated(true)
   }, [])
 
-  /* =======================================================
-     SAVE DATA
-  ======================================================= */
-
   useEffect(() => {
     if (!hydrated) return
 
@@ -134,10 +108,6 @@ export default function PrincipalPage() {
       JSON.stringify(principals)
     )
   }, [principals, hydrated])
-
-  /* =======================================================
-     SYNC DATA
-  ======================================================= */
 
   useEffect(() => {
     const syncData = () => {
@@ -186,10 +156,6 @@ export default function PrincipalPage() {
     }
   }, [])
 
-  /* =======================================================
-     RESET FORM
-  ======================================================= */
-
   const resetForm = () => {
     setPrincipalName("")
     setBrands("")
@@ -197,18 +163,10 @@ export default function PrincipalPage() {
     setCatalogueData("")
   }
 
-  /* =======================================================
-     OPEN ADD FORM
-  ======================================================= */
-
   const openAddForm = () => {
     resetForm()
     setShowForm(true)
   }
-
-  /* =======================================================
-     CATALOGUE UPLOAD
-  ======================================================= */
 
   const handleCatalogueUpload = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -244,10 +202,6 @@ export default function PrincipalPage() {
 
     reader.readAsDataURL(file)
   }
-
-  /* =======================================================
-     ADD PRINCIPAL
-  ======================================================= */
 
   const handleAddPrincipal = () => {
     const trimmedName =
@@ -289,10 +243,6 @@ export default function PrincipalPage() {
     setShowForm(false)
   }
 
-  /* =======================================================
-     DELETE PRINCIPAL
-  ======================================================= */
-
   const handleDeletePrincipal = () => {
     if (!selectedPrincipal) return
 
@@ -321,10 +271,6 @@ export default function PrincipalPage() {
     setShowDetail(false)
   }
 
-  /* =======================================================
-     OPEN DETAIL
-  ======================================================= */
-
   const openDetail = (
     principal: Principal
   ) => {
@@ -334,11 +280,6 @@ export default function PrincipalPage() {
 
     setShowDetail(true)
   }
-
-  /* =======================================================
-     GO TO CONTACT
-  ======================================================= */
-
   const goToContact = (
     principal: Principal
   ) => {
@@ -346,11 +287,6 @@ export default function PrincipalPage() {
       `/contact-list?principal=${principal.id}`
     )
   }
-
-  /* =======================================================
-     FILTER
-  ======================================================= */
-
   const filteredPrincipals =
     principals.filter(
       (principal) => {
@@ -381,16 +317,8 @@ export default function PrincipalPage() {
       }
     )
 
-  /* =======================================================
-     RETURN
-  ======================================================= */
-
   return (
     <main className="flex min-h-screen bg-gray-100">
-
-      {/* ===================================================
-          SIDEBAR
-      =================================================== */}
 
       <aside className="flex w-68 flex-col bg-[#10052D] px-5 py-6 text-white">
 
@@ -449,8 +377,6 @@ export default function PrincipalPage() {
           <Building2 size={18} />
           Vendor/Principal
         </Link>
-
-        {/* PROFILE */}
 
         <div className="mt-auto">
 
@@ -533,15 +459,7 @@ export default function PrincipalPage() {
         </div>
 
       </aside>
-
-      {/* ===================================================
-          MAIN
-      =================================================== */}
-
       <section className="flex-1">
-
-        {/* HEADER */}
-
         <header className="flex h-20 items-center justify-between bg-white px-8">
 
           <div>
@@ -601,13 +519,7 @@ export default function PrincipalPage() {
           </div>
 
         </header>
-
-        {/* CONTENT */}
-
         <div className="p-8">
-
-          {/* TOP ACTION */}
-
           <div className="mb-5 flex items-center justify-between">
 
             <div className="flex h-11 w-80 items-center gap-2 rounded-full bg-white px-4 shadow-md">
@@ -643,11 +555,6 @@ export default function PrincipalPage() {
             </button>
 
           </div>
-
-          {/* =================================================
-              PRINCIPAL LIST
-          ================================================= */}
-
           <div className="min-h-[520px] rounded-2xl bg-white p-5 shadow-md">
 
             <div className="mb-3 grid grid-cols-[1.2fr_1.5fr_1fr_160px] border-b border-gray-400 pb-3 text-sm font-bold text-black">
@@ -677,8 +584,6 @@ export default function PrincipalPage() {
                   key={principal.id}
                   className="grid grid-cols-[1.2fr_1.5fr_1fr_160px] items-center border-b border-gray-200 py-4 text-sm"
                 >
-
-                  {/* PRINCIPAL */}
 
                   <button
                     type="button"
@@ -717,9 +622,6 @@ export default function PrincipalPage() {
                     </div>
 
                   </button>
-
-                  {/* BRANDS */}
-
                   <div className="flex flex-wrap gap-2 pr-5">
 
                     {principal.brands
@@ -748,9 +650,6 @@ export default function PrincipalPage() {
                     )}
 
                   </div>
-
-                  {/* CATALOGUE */}
-
                   <div>
 
                     {principal.catalogueName ? (
@@ -797,11 +696,7 @@ export default function PrincipalPage() {
                     )}
 
                   </div>
-
-                  {/* ACTION */}
-
                   <div className="flex items-center gap-2">
-
                     <button
                       type="button"
                       onClick={() =>
@@ -873,19 +768,10 @@ export default function PrincipalPage() {
         </div>
 
       </section>
-
-      {/* ===================================================
-          ADD PRINCIPAL MODAL
-      =================================================== */}
-
       {showForm && (
-
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
 
           <div className="w-full max-w-[520px] rounded-2xl bg-white p-6 shadow-xl">
-
-            {/* HEADER */}
-
             <div className="mb-6 flex items-center justify-between">
 
               <div>
@@ -916,9 +802,6 @@ export default function PrincipalPage() {
             </div>
 
             <div className="space-y-5">
-
-              {/* PRINCIPAL */}
-
               <div>
 
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -937,9 +820,6 @@ export default function PrincipalPage() {
                 />
 
               </div>
-
-              {/* BRAND */}
-
               <div>
 
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -963,9 +843,6 @@ export default function PrincipalPage() {
                 </p>
 
               </div>
-
-              {/* CATALOGUE */}
-
               <div>
 
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -1033,9 +910,6 @@ export default function PrincipalPage() {
               </div>
 
             </div>
-
-            {/* FOOTER */}
-
             <div className="mt-7 flex justify-end gap-3">
 
               <button
@@ -1070,10 +944,6 @@ export default function PrincipalPage() {
 
       )}
 
-      {/* ===================================================
-          PRINCIPAL DETAIL
-      =================================================== */}
-
       {showDetail &&
         selectedPrincipal && (
 
@@ -1089,9 +959,6 @@ export default function PrincipalPage() {
           />
 
           <aside className="absolute right-0 top-0 flex h-full w-[450px] flex-col bg-white shadow-2xl">
-
-            {/* HEADER */}
-
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5">
 
               <div>
@@ -1121,13 +988,7 @@ export default function PrincipalPage() {
               </button>
 
             </div>
-
-            {/* CONTENT */}
-
             <div className="flex-1 overflow-y-auto p-6">
-
-              {/* PRINCIPAL */}
-
               <div className="mb-6 flex items-center gap-4">
 
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#33245A] text-white">
@@ -1153,9 +1014,6 @@ export default function PrincipalPage() {
                 </div>
 
               </div>
-
-              {/* BRANDS */}
-
               <div className="mb-7">
 
                 <p className="mb-3 text-sm font-semibold text-gray-700">
@@ -1194,8 +1052,6 @@ export default function PrincipalPage() {
                 )}
 
               </div>
-
-              {/* CATALOGUE */}
 
               <div className="mb-7">
 
@@ -1279,8 +1135,6 @@ export default function PrincipalPage() {
 
               </div>
 
-              {/* CONTACT ACTION */}
-
               <div className="rounded-2xl bg-[#f1edfa] p-5">
 
                 <div className="mb-4 flex items-center gap-3">
@@ -1322,9 +1176,6 @@ export default function PrincipalPage() {
                 </button>
 
               </div>
-
-              {/* DELETE */}
-
               <button
                 type="button"
                 onClick={
