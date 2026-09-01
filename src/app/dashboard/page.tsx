@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -31,9 +31,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+type User = {
+  id: string
+  name: string
+  email: string
+  role: string
+  division: string
+}
 
 export default function Dashboard() {
+  console.log("DASHBOARD FILE JALAN")
   const router = useRouter()
+
+  const [user, setUser] = useState<User | null>(null)
   const [showAddMenu, setShowAddMenu] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
   const [step, setStep] = useState(1)
@@ -45,13 +55,80 @@ export default function Dashboard() {
   const [description, setDescription] = useState("")
   const [productImage, setProductImage] = useState<File | null>(null)
 
+  useEffect(() => {
+    const token =
+      localStorage.getItem("authToken") ||
+      sessionStorage.getItem("authToken")
+
+    if (!token) {
+      router.replace("/")
+      return
+    }
+
+    async function fetchUser() {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/users/me",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          localStorage.removeItem("authToken")
+          localStorage.removeItem("user")
+          sessionStorage.removeItem("authToken")
+          sessionStorage.removeItem("user")
+
+          router.replace("/")
+          return
+        }
+
+        setUser(data.user)
+      } catch (error) {
+        console.error("Get user error:", error)
+      }
+    }
+
+    fetchUser()
+  }, [router])
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase()
+  }
+
+  const getDivisionName = (division: string) => {
+    if (division === "RND") {
+      return "RnD Division"
+    }
+
+    if (division === "SALES") {
+      return "Sales Division"
+    }
+
+    if (division === "ADMIN") {
+      return "Admin Division"
+    }
+
+    return division
+  }
 
   const openNewContact = () => {
     setShowAddMenu(false)
     setStep(1)
     setShowContactModal(true)
   }
-
 
   const closeModal = () => {
     setShowContactModal(false)
@@ -67,16 +144,13 @@ export default function Dashboard() {
     setProductImage(null)
   }
 
-
   const nextStep = () => {
     setStep(2)
   }
 
-
   const previousStep = () => {
     setStep(1)
   }
-
 
   const handleImageChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -87,7 +161,6 @@ export default function Dashboard() {
       setProductImage(file)
     }
   }
-
 
   const handleConfirm = () => {
     console.log({
@@ -103,22 +176,35 @@ export default function Dashboard() {
     closeModal()
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem("authToken")
+    localStorage.removeItem("user")
+
+    sessionStorage.removeItem("authToken")
+    sessionStorage.removeItem("user")
+
+    router.replace("/")
+  }
 
   return (
     <main className="flex min-h-screen bg-gray-100">
 
-
       <aside className="flex w-68 shrink-0 flex-col bg-[#10052D] px-5 py-6 text-white">
-
 
         <div className="mb-8 flex items-center gap-3">
 
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-bold text-[#10052D]">
-            RnD
+            {user ? getInitials(user.name) : "AA"}
           </div>
 
           <h2 className="text-xl font-bold">
-            Divisi RnD
+            {user
+              ? user.division === "RND"
+                ? "Divisi RnD"
+                : user.division === "SALES"
+                  ? "Divisi Sales"
+                  : "Divisi Admin"
+              : "Loading..."}
           </h2>
 
         </div>
@@ -162,23 +248,25 @@ export default function Dashboard() {
 
         <Link
           href="/products"
-          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]">
-            <FileText size={19} />
+          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]"
+        >
+          <FileText size={19} />
 
-            <span>
-              Products
-            </span>
-          </Link>
+          <span>
+            Products
+          </span>
+        </Link>
 
         <Link
           href="/principal"
-          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]">
-            <FileText size={19} />
+          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]"
+        >
+          <FileText size={19} />
 
-            <span>
-              Vendor/Principal
-            </span>
-          </Link>
+          <span>
+            Vendor/Principal
+          </span>
+        </Link>
 
         <div className="mt-6 border-t border-white/10 pt-5">
         </div>
@@ -194,31 +282,30 @@ export default function Dashboard() {
                 <Avatar className="h-10 w-10">
 
                   <AvatarFallback className="bg-white text-[#10052D]">
-                    AR
+                    {user ? getInitials(user.name) : "AA"}
                   </AvatarFallback>
 
                 </Avatar>
 
-
                 <div className="flex-1">
 
                   <p className="text-sm font-semibold">
-                    Akbar arohimat
+                    {user?.name || "Loading..."}
                   </p>
 
                   <p className="text-xs text-gray-300">
-                    RnD Division
+                    {user
+                      ? getDivisionName(user.division)
+                      : "Loading..."}
                   </p>
 
                 </div>
-
 
                 <ChevronDown size={18} />
 
               </div>
 
             </DropdownMenuTrigger>
-
 
             <DropdownMenuContent
               align="end"
@@ -227,29 +314,23 @@ export default function Dashboard() {
             >
 
               <DropdownMenuItem
-                 onClick={() => router.push("/edit-profile")}
-                >
+                onClick={() => router.push("/edit-profile")}
+              >
                 <UserRound className="mr-2 h-4 w-4" />
                 Edit Profile
               </DropdownMenuItem>
 
-
               <DropdownMenuItem
-                 onClick={() => router.push("/settings")}
-                 >
+                onClick={() => router.push("/settings")}
+              >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
 
-
               <DropdownMenuSeparator />
 
-
-              <DropdownMenuItem 
-                onClick={() => {
-                    localStorage.removeItem("isLoggedIn")
-                    router.replace("/")
-                }}
+              <DropdownMenuItem
+                onClick={handleLogout}
                 className="text-red-600"
               >
                 <LogOut className="mr-2 h-4 w-4" />
@@ -267,7 +348,6 @@ export default function Dashboard() {
       <section className="flex-1">
 
         <header className="flex h-20 items-center justify-between bg-white px-8">
-
 
           <div>
 
@@ -324,7 +404,6 @@ export default function Dashboard() {
 
                   </button>
 
-
                   <button
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-gray-800 transition hover:bg-gray-100"
                   >
@@ -348,11 +427,11 @@ export default function Dashboard() {
                 className="text-gray-600"
               />
 
-             <input
-               type="text"
-               placeholder="Find Something.."
-               className="w-full bg-transparent text-sm text-gray-600 ooutline-none placeholder:text-gray-500"
-            />
+              <input
+                type="text"
+                placeholder="Find Something.."
+                className="w-full bg-transparent text-sm text-gray-600 outline-none placeholder:text-gray-500"
+              />
 
             </div>
 
@@ -363,8 +442,6 @@ export default function Dashboard() {
         <div className="p-8">
 
           <div className="flex gap-5">
-
-
 
             <div className="h-28 w-64 rounded-2xl bg-white p-6 shadow-md">
 
@@ -377,7 +454,6 @@ export default function Dashboard() {
               </p>
 
             </div>
-
 
             <div className="h-28 w-64 rounded-2xl bg-white p-6 shadow-md">
 
@@ -392,7 +468,7 @@ export default function Dashboard() {
             </div>
 
             <div className="h-28 w-64 rounded-2xl bg-white p-6 shadow-md">
-              
+
               <p className="text-3xl font-bold text-black">
                 0
               </p>
@@ -400,9 +476,11 @@ export default function Dashboard() {
               <p className="mt-1 text-sm text-gray-700">
                 Request Done
               </p>
+
             </div>
 
             <div className="h-28 w-64 rounded-2xl bg-white p-6 shadow-md">
+
               <p className="text-3xl font-bold text-black">
                 0
               </p>
@@ -410,12 +488,12 @@ export default function Dashboard() {
               <p className="mt-1 text-sm text-gray-700">
                 Request Pending
               </p>
+
             </div>
 
           </div>
 
           <div className="mt-6 h-64 max-w-[600px] rounded-2xl bg-white p-6 shadow-md">
-
 
             <div className="flex items-center justify-between">
 
@@ -431,13 +509,11 @@ export default function Dashboard() {
 
             <div className="mt-4 flex items-center justify-between border-b border-gray-300 pb-4">
 
-
               <div className="flex items-center gap-3">
 
                 <div className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-sm font-semibold text-[#33245A]">
                   AR
                 </div>
-
 
                 <div>
 
@@ -453,7 +529,6 @@ export default function Dashboard() {
 
               </div>
 
-
               <p className="text-xs text-gray-500">
                 2 jam yang lalu
               </p>
@@ -466,11 +541,9 @@ export default function Dashboard() {
 
       </section>
 
-
       {showContactModal && (
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px]">
-
 
           <div className="relative w-[520px] rounded-[32px] bg-white p-7 shadow-2xl">
 
@@ -483,7 +556,6 @@ export default function Dashboard() {
 
             </button>
 
-
             {step === 1 && (
 
               <div>
@@ -492,11 +564,9 @@ export default function Dashboard() {
                   Add New Contact
                 </h2>
 
-
                 <p className="mt-1 text-center text-sm text-gray-500">
                   Masukkan informasi kontak
                 </p>
-
 
                 <div className="mt-6">
 
@@ -549,7 +619,6 @@ export default function Dashboard() {
 
                 </div>
 
-
                 <div className="mt-4">
 
                   <label className="mb-2 block text-sm font-medium text-gray-700">
@@ -575,7 +644,6 @@ export default function Dashboard() {
                   Next
                 </button>
 
-
                 <div className="mt-4 flex justify-center gap-2">
 
                   <span className="h-2.5 w-2.5 rounded-full bg-[#33245A]" />
@@ -595,7 +663,6 @@ export default function Dashboard() {
                 <h2 className="text-center text-2xl font-bold text-black">
                   Add Product
                 </h2>
-
 
                 <p className="mt-1 text-center text-sm text-gray-500">
                   Masukkan informasi produk
@@ -624,7 +691,6 @@ export default function Dashboard() {
                     Foto Product
                   </label>
 
-
                   <label className="flex h-36 cursor-pointer flex-col items-center justify-center rounded-2xl bg-gray-100 text-gray-500 transition hover:bg-gray-200">
 
                     <ImagePlus size={30} />
@@ -634,7 +700,6 @@ export default function Dashboard() {
                         ? productImage.name
                         : "Upload foto product"}
                     </span>
-
 
                     <input
                       type="file"
@@ -672,7 +737,6 @@ export default function Dashboard() {
                   >
                     Back
                   </button>
-
 
                   <button
                     onClick={handleConfirm}
