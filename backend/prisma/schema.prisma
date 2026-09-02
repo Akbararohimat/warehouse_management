@@ -1,35 +1,98 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+provider = "prisma-client"
+output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+provider = "postgresql"
 }
 
 model User {
-  id           String   @id
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         Role     @default(EMPLOYEE)
-  division     Division
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime
+id           String   @id
+name         String
+email        String   @unique
+passwordHash String
+role         Role     @default(EMPLOYEE)
+division     Division
+isActive     Boolean  @default(true)
+createdAt    DateTime @default(now())
+updatedAt    DateTime
 
-  @@index([division])
-  @@index([isActive])
-  @@index([role])
+salesRequests   SalesRequest[]   @relation("SalesRequests")
+handledRequests SalesRequest[]   @relation("HandledRequests")
+followUps       RequestFollowUp[]
+
+@@index([division])
+@@index([isActive])
+@@index([role])
+}
+
+model SalesRequest {
+id            String          @id @default(uuid())
+requestFor    RequestFor
+priority      RequestPriority @default(NORMAL)
+request       String
+description   String
+status        RequestStatus   @default(PENDING)
+
+requestedById String
+requestedBy   User            @relation("SalesRequests", fields: [requestedById], references: [id])
+
+handledById   String?
+handledBy     User?           @relation("HandledRequests", fields: [handledById], references: [id])
+
+followUps     RequestFollowUp[]
+
+createdAt     DateTime        @default(now())
+updatedAt     DateTime        @updatedAt
+
+@@index([requestedById])
+@@index([handledById])
+@@index([status])
+@@index([priority])
+@@index([createdAt])
+}
+
+model RequestFollowUp {
+id        String       @id @default(uuid())
+requestId String
+userId    String
+message   String
+
+request   SalesRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+user      User         @relation(fields: [userId], references: [id])
+
+createdAt DateTime     @default(now())
+
+@@index([requestId])
+@@index([userId])
+@@index([createdAt])
 }
 
 enum Role {
-  ADMIN
-  EMPLOYEE
+ADMIN
+EMPLOYEE
 }
 
 enum Division {
-  ADMIN
-  RND
-  SALES
+ADMIN
+RND
+SALES
+}
+
+enum RequestFor {
+CUSTOMER
+COMPANY
+}
+
+enum RequestPriority {
+NORMAL
+MEDIUM
+HIGH
+}
+
+enum RequestStatus {
+PENDING
+ON_PROGRESS
+DONE
 }

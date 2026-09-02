@@ -19,32 +19,60 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || "Email atau password salah");
+        setError(
+          data.message || "Email atau password salah"
+        );
         return;
       }
 
       if (remember) {
-        localStorage.setItem("authToken", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem(
+          "authToken",
+          data.token
+        );
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
       } else {
-        sessionStorage.setItem("authToken", data.token);
-        sessionStorage.setItem("user", JSON.stringify(data.user));
+        sessionStorage.setItem(
+          "authToken",
+          data.token
+        );
+
+        sessionStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
       }
 
+      if (data.user.role === "ADMIN") {
+        router.push("/dashboard");
+        return;
+      }
+
+      if (data.user.division === "SALES") {
+        router.push("/sales");
+        return;
+      }
       router.push("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
@@ -61,10 +89,13 @@ export default function LoginForm() {
       </h1>
 
       <p className="mt-2 text-base text-gray-500">
-        masukan email dan password anda
+        Masukan Email dan Password Anda
       </p>
 
-      <form className="mt-10" onSubmit={handleLogin}>
+      <form
+        className="mt-10"
+        onSubmit={handleLogin}
+      >
         <div className="flex flex-col gap-2">
           <label
             htmlFor="email"
@@ -78,7 +109,9 @@ export default function LoginForm() {
             type="email"
             placeholder="Masukan email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
             required
             className="h-12 w-full rounded-full bg-gray-200 px-5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -97,7 +130,9 @@ export default function LoginForm() {
             type="password"
             placeholder="Masukan Password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
             required
             className="h-12 w-full rounded-full bg-gray-200 px-5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -108,7 +143,9 @@ export default function LoginForm() {
             id="remember"
             type="checkbox"
             checked={remember}
-            onChange={(e) => setRemember(e.target.checked)}
+            onChange={(e) =>
+              setRemember(e.target.checked)
+            }
             className="h-4 w-4"
           />
 
@@ -116,7 +153,7 @@ export default function LoginForm() {
             htmlFor="remember"
             className="text-sm text-gray-600"
           >
-            remember me
+            Remember Me BROSKII
           </label>
         </div>
 
@@ -132,7 +169,9 @@ export default function LoginForm() {
             disabled={loading}
             className="h-11 w-32 rounded-full bg-[#536DFE] text-sm font-medium text-black transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Loading..." : "Login"}
+            {loading
+              ? "Loading..."
+              : "Login"}
           </button>
         </div>
       </form>

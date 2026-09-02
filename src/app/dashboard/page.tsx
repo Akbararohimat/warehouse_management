@@ -40,17 +40,20 @@ type User = {
 }
 
 export default function Dashboard() {
-  console.log("DASHBOARD FILE JALAN")
   const router = useRouter()
 
   const [user, setUser] = useState<User | null>(null)
+
   const [showAddMenu, setShowAddMenu] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
+
   const [step, setStep] = useState(1)
+
   const [contactName, setContactName] = useState("")
   const [company, setCompany] = useState("")
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
+
   const [product, setProduct] = useState("")
   const [description, setDescription] = useState("")
   const [productImage, setProductImage] = useState<File | null>(null)
@@ -82,6 +85,7 @@ export default function Dashboard() {
         if (!response.ok) {
           localStorage.removeItem("authToken")
           localStorage.removeItem("user")
+
           sessionStorage.removeItem("authToken")
           sessionStorage.removeItem("user")
 
@@ -124,14 +128,46 @@ export default function Dashboard() {
     return division
   }
 
+  const getDepartmentName = () => {
+    if (!user) {
+      return "Loading..."
+    }
+
+    if (user.role === "ADMIN" || user.division === "ADMIN") {
+      return "Divisi Admin"
+    }
+
+    if (user.division === "RND") {
+      return "Divisi RnD"
+    }
+
+    if (user.division === "SALES") {
+      return "Divisi Sales"
+    }
+
+    return user.division
+  }
+
   const openNewContact = () => {
     setShowAddMenu(false)
+
     setStep(1)
+
+    setContactName("")
+    setCompany("")
+    setPhone("")
+    setEmail("")
+
+    setProduct("")
+    setDescription("")
+    setProductImage(null)
+
     setShowContactModal(true)
   }
 
   const closeModal = () => {
     setShowContactModal(false)
+
     setStep(1)
 
     setContactName("")
@@ -145,6 +181,16 @@ export default function Dashboard() {
   }
 
   const nextStep = () => {
+    if (
+      !contactName.trim() ||
+      !company.trim() ||
+      !phone.trim() ||
+      !email.trim()
+    ) {
+      alert("Mohon lengkapi semua informasi kontak.")
+      return
+    }
+
     setStep(2)
   }
 
@@ -163,6 +209,11 @@ export default function Dashboard() {
   }
 
   const handleConfirm = () => {
+    if (!product.trim()) {
+      alert("Nama product wajib diisi.")
+      return
+    }
+
     console.log({
       contactName,
       company,
@@ -188,7 +239,6 @@ export default function Dashboard() {
 
   return (
     <main className="flex min-h-screen bg-gray-100">
-
       <aside className="flex w-68 shrink-0 flex-col bg-[#10052D] px-5 py-6 text-white">
 
         <div className="mb-8 flex items-center gap-3">
@@ -198,13 +248,7 @@ export default function Dashboard() {
           </div>
 
           <h2 className="text-xl font-bold">
-            {user
-              ? user.division === "RND"
-                ? "Divisi RnD"
-                : user.division === "SALES"
-                  ? "Divisi Sales"
-                  : "Divisi Admin"
-              : "Loading..."}
+            {getDepartmentName()}
           </h2>
 
         </div>
@@ -212,7 +256,6 @@ export default function Dashboard() {
         <p className="mb-3 px-1 text-sm font-semibold text-gray-300">
           Menu
         </p>
-
         <Link
           href="/dashboard"
           className="flex items-center gap-3 rounded-full bg-[#33245A] px-4 py-3 text-sm"
@@ -223,7 +266,6 @@ export default function Dashboard() {
             Dashboard
           </span>
         </Link>
-
         <Link
           href="/contact-list"
           className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]"
@@ -234,7 +276,6 @@ export default function Dashboard() {
             Contact List
           </span>
         </Link>
-
         <Link
           href="/request-sales"
           className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]"
@@ -245,7 +286,6 @@ export default function Dashboard() {
             Request Sales
           </span>
         </Link>
-
         <Link
           href="/products"
           className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]"
@@ -256,7 +296,6 @@ export default function Dashboard() {
             Products
           </span>
         </Link>
-
         <Link
           href="/principal"
           className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]"
@@ -268,8 +307,7 @@ export default function Dashboard() {
           </span>
         </Link>
 
-        <div className="mt-6 border-t border-white/10 pt-5">
-        </div>
+        <div className="mt-6 border-t border-white/10 pt-5" />
 
         <div className="mt-auto">
 
@@ -282,7 +320,9 @@ export default function Dashboard() {
                 <Avatar className="h-10 w-10">
 
                   <AvatarFallback className="bg-white text-[#10052D]">
-                    {user ? getInitials(user.name) : "AA"}
+                    {user
+                      ? getInitials(user.name)
+                      : "AA"}
                   </AvatarFallback>
 
                 </Avatar>
@@ -312,16 +352,30 @@ export default function Dashboard() {
               side="top"
               className="mb-2 w-52"
             >
+              {user?.role === "ADMIN" && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    router.push("/user-management")
+                  }
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  User Management
+                </DropdownMenuItem>
+              )}
 
               <DropdownMenuItem
-                onClick={() => router.push("/edit-profile")}
+                onClick={() =>
+                  router.push("/edit-profile")
+                }
               >
                 <UserRound className="mr-2 h-4 w-4" />
                 Edit Profile
               </DropdownMenuItem>
 
               <DropdownMenuItem
-                onClick={() => router.push("/settings")}
+                onClick={() =>
+                  router.push("/settings")
+                }
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
@@ -344,9 +398,7 @@ export default function Dashboard() {
         </div>
 
       </aside>
-
       <section className="flex-1">
-
         <header className="flex h-20 items-center justify-between bg-white px-8">
 
           <div>
@@ -362,7 +414,6 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-3">
-
             <div className="relative">
 
               <button
@@ -405,6 +456,10 @@ export default function Dashboard() {
                   </button>
 
                   <button
+                    onClick={() => {
+                      setShowAddMenu(false)
+                      router.push("/products")
+                    }}
                     className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-gray-800 transition hover:bg-gray-100"
                   >
 
@@ -419,7 +474,6 @@ export default function Dashboard() {
               )}
 
             </div>
-
             <div className="flex h-10 w-64 items-center gap-2 rounded-full bg-gray-100 px-4 shadow-inner">
 
               <Search
@@ -438,9 +492,7 @@ export default function Dashboard() {
           </div>
 
         </header>
-
         <div className="p-8">
-
           <div className="flex gap-5">
 
             <div className="h-28 w-64 rounded-2xl bg-white p-6 shadow-md">
@@ -501,7 +553,12 @@ export default function Dashboard() {
                 Kontak Terbaru
               </h2>
 
-              <button className="text-sm text-gray-600">
+              <button
+                onClick={() =>
+                  router.push("/contact-list")
+                }
+                className="text-sm text-gray-600"
+              >
                 Lihat Semua →
               </button>
 
@@ -551,9 +608,7 @@ export default function Dashboard() {
               onClick={closeModal}
               className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-black"
             >
-
               <X size={18} />
-
             </button>
 
             {step === 1 && (

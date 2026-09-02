@@ -46,7 +46,7 @@ router.post(
   createUser
 );
 
-router.patch(
+router.put(
   "/:id",
   authenticate,
   requireRole("ADMIN"),

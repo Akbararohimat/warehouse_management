@@ -1,12 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import {
   LayoutDashboard,
-  Users,
   Ticket,
   ChartNoAxesCombined,
   Settings,
@@ -29,63 +28,163 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+type TicketStatus = "PENDING" | "ON_PROGRESS" | "DONE"
+
+type SalesTicket = {
+  id: string
+  requestFor: "CUSTOMER" | "COMPANY"
+  priority: "NORMAL" | "MEDIUM" | "HIGH"
+  request: string
+  description: string
+  status: TicketStatus
+  createdAt: string
+}
+
 export default function SalesTickets() {
   const router = useRouter()
 
   const [search, setSearch] = useState("")
   const [showModal, setShowModal] = useState(false)
 
-  const [subject, setSubject] = useState("")
-  const [customer, setCustomer] = useState("")
-  const [product, setProduct] = useState("")
+  const [requestFor, setRequestFor] = useState("")
+  const [priority, setPriority] = useState("NORMAL")
+  const [request, setRequest] = useState("")
   const [description, setDescription] = useState("")
 
-  const tickets = [
-    {
-      id: "#001",
-      customer: "PT.PTan",
-      request: "Request Router",
-      date: "19/02/2027",
-      status: "Pending",
-    },
-    {
-      id: "#002",
-      customer: "PT.ABC",
-      request: "Request Switch",
-      date: "18/02/2027",
-      status: "Diproses",
-    },
-    {
-      id: "#003",
-      customer: "PT.Network",
-      request: "Upgrade Router",
-      date: "17/02/2027",
-      status: "Selesai",
-    },
-  ]
+  const [tickets, setTickets] = useState<SalesTicket[]>([])
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState("")
+
+  const getToken = () => {
+    return (
+      localStorage.getItem("authToken") ||
+      sessionStorage.getItem("authToken")
+    )
+  }
+
+  const fetchTickets = async () => {
+    try {
+      setLoading(true)
+      setError("")
+
+      const token = getToken()
+
+      if (!token) {
+        router.replace("/")
+        return
+      }
+
+      const response = await fetch(
+        "http://localhost:5000/api/sales-requests",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || "Gagal mengambil ticket")
+      }
+
+      setTickets(data.requests || [])
+    } catch (error) {
+      console.error("Fetch tickets error:", error)
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Gagal mengambil ticket"
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchTickets()
+  }, [])
 
   const filteredTickets = tickets.filter((ticket) =>
-    `${ticket.id} ${ticket.customer} ${ticket.request} ${ticket.status}`
+    `${ticket.id} ${ticket.requestFor} ${ticket.request} ${ticket.priority} ${ticket.status}`
       .toLowerCase()
       .includes(search.toLowerCase())
   )
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    console.log({
-      subject,
-      customer,
-      product,
-      description,
+    try {
+      setSubmitting(true)
+      setError("")
+
+      const token = getToken()
+
+      if (!token) {
+        router.replace("/")
+        return
+      }
+
+      const response = await fetch(
+        "http://localhost:5000/api/sales-requests",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            requestFor,
+            priority,
+            request,
+            description,
+          }),
+        }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || "Gagal membuat ticket")
+      }
+
+      setShowModal(false)
+
+      setRequestFor("")
+      setPriority("NORMAL")
+      setRequest("")
+      setDescription("")
+
+      await fetchTickets()
+    } catch (error) {
+      console.error("Create ticket error:", error)
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Gagal membuat ticket"
+      )
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     })
+  }
 
-    setShowModal(false)
-
-    setSubject("")
-    setCustomer("")
-    setProduct("")
-    setDescription("")
+  const getStatusLabel = (status: TicketStatus) => {
+    if (status === "PENDING") return "Pending"
+    if (status === "ON_PROGRESS") return "Diproses"
+    return "Selesai"
   }
 
   return (
@@ -104,6 +203,7 @@ export default function SalesTickets() {
           </h2>
 
         </div>
+
         <p className="mb-3 px-4 text-sm font-semibold uppercase text-gray-400">
           Menu
         </p>
@@ -131,6 +231,7 @@ export default function SalesTickets() {
           <ChartNoAxesCombined size={18} />
           Monitoring Ticket
         </Link>
+
         <div className="mt-auto">
 
           <DropdownMenu>
@@ -191,6 +292,8 @@ export default function SalesTickets() {
                 className="text-red-600"
                 onClick={() => {
                   localStorage.removeItem("isLoggedIn")
+                  localStorage.removeItem("token")
+                  sessionStorage.removeItem("token")
                   router.replace("/")
                 }}
               >
@@ -205,7 +308,9 @@ export default function SalesTickets() {
         </div>
 
       </aside>
+
       <section className="flex-1">
+
         <header className="flex h-20 items-center justify-between bg-white px-8">
 
           <div>
@@ -231,6 +336,7 @@ export default function SalesTickets() {
             </p>
 
           </div>
+
           <div className="flex h-10 w-64 items-center gap-2 rounded-full bg-gray-100 px-4 shadow-inner">
 
             <Search
@@ -246,7 +352,9 @@ export default function SalesTickets() {
           </div>
 
         </header>
+
         <div className="p-8">
+
           <div className="mb-5 flex items-center justify-between">
 
             <div>
@@ -270,6 +378,7 @@ export default function SalesTickets() {
             </button>
 
           </div>
+
           <div className="mb-5 flex h-11 w-80 items-center gap-2 rounded-full bg-white px-4 shadow-md">
 
             <Search
@@ -280,12 +389,20 @@ export default function SalesTickets() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Find ticket, customer, request..."
+              placeholder="Find ticket, request..."
               className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-500"
             />
 
           </div>
+
+          {error && (
+            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
           <div className="min-h-[500px] rounded-2xl bg-white p-5 shadow-md">
+
             <div className="grid grid-cols-[0.7fr_1.3fr_1.5fr_1fr_1fr] border-b border-gray-300 pb-3 text-sm font-bold text-black">
 
               <div>
@@ -293,7 +410,7 @@ export default function SalesTickets() {
               </div>
 
               <div>
-                Customer
+                Request For
               </div>
 
               <div>
@@ -309,59 +426,72 @@ export default function SalesTickets() {
               </div>
 
             </div>
-            {filteredTickets.map((ticket) => (
 
-              <div
-                key={ticket.id}
-                className="grid grid-cols-[0.7fr_1.3fr_1.5fr_1fr_1fr] items-center border-b border-gray-200 py-5 text-sm"
-              >
+            {loading ? (
 
-                <div className="font-semibold text-black">
-                  {ticket.id}
-                </div>
-
-                <div className="text-gray-700">
-                  {ticket.customer}
-                </div>
-
-                <div className="text-gray-700">
-                  {ticket.request}
-                </div>
-
-                <div className="text-gray-500">
-                  {ticket.date}
-                </div>
-
-                <div>
-
-                  {ticket.status === "Pending" && (
-                    <span className="inline-flex rounded-full bg-yellow-100 px-4 py-1 text-xs font-medium text-yellow-700">
-                      Pending
-                    </span>
-                  )}
-
-                  {ticket.status === "Diproses" && (
-                    <span className="inline-flex rounded-full bg-gray-100 px-4 py-1 text-xs font-medium text-gray-700">
-                      Diproses
-                    </span>
-                  )}
-
-                  {ticket.status === "Selesai" && (
-                    <span className="inline-flex rounded-full bg-green-100 px-4 py-1 text-xs font-medium text-green-600">
-                      Selesai
-                    </span>
-                  )}
-
-                </div>
-
+              <div className="flex h-60 items-center justify-center text-sm text-gray-400">
+                Memuat ticket...
               </div>
 
-            ))}
+            ) : filteredTickets.length > 0 ? (
 
-            {filteredTickets.length === 0 && (
+              filteredTickets.map((ticket) => (
+
+                <div
+                  key={ticket.id}
+                  className="grid grid-cols-[0.7fr_1.3fr_1.5fr_1fr_1fr] items-center border-b border-gray-200 py-5 text-sm"
+                >
+
+                  <div className="font-semibold text-black">
+                    #{ticket.id.slice(0, 8)}
+                  </div>
+
+                  <div className="text-gray-700">
+                    {ticket.requestFor === "CUSTOMER"
+                      ? "Customer"
+                      : "Company"}
+                  </div>
+
+                  <div className="truncate pr-4 text-gray-700">
+                    {ticket.request}
+                  </div>
+
+                  <div className="text-gray-500">
+                    {formatDate(ticket.createdAt)}
+                  </div>
+
+                  <div>
+
+                    {ticket.status === "PENDING" && (
+                      <span className="inline-flex rounded-full bg-yellow-100 px-4 py-1 text-xs font-medium text-yellow-700">
+                        Pending
+                      </span>
+                    )}
+
+                    {ticket.status === "ON_PROGRESS" && (
+                      <span className="inline-flex rounded-full bg-gray-100 px-4 py-1 text-xs font-medium text-gray-700">
+                        Diproses
+                      </span>
+                    )}
+
+                    {ticket.status === "DONE" && (
+                      <span className="inline-flex rounded-full bg-green-100 px-4 py-1 text-xs font-medium text-green-600">
+                        Selesai
+                      </span>
+                    )}
+
+                  </div>
+
+                </div>
+
+              ))
+
+            ) : (
+
               <div className="flex h-60 items-center justify-center text-sm text-gray-400">
                 Ticket tidak ditemukan
               </div>
+
             )}
 
           </div>
@@ -369,6 +499,7 @@ export default function SalesTickets() {
         </div>
 
       </section>
+
       {showModal && (
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -397,89 +528,85 @@ export default function SalesTickets() {
               </button>
 
             </div>
+
             <form
               onSubmit={handleSubmit}
               className="space-y-5"
             >
+
               <div>
 
                 <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Subject
+                  Request For
+                </label>
+
+                <select
+                  required
+                  value={requestFor}
+                  onChange={(e) => setRequestFor(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-black outline-none focus:border-[#F5C400] focus:ring-2 focus:ring-yellow-100"
+                >
+
+                  <option value="">
+                    Pilih Request For
+                  </option>
+
+                  <option value="CUSTOMER">
+                    Customer
+                  </option>
+
+                  <option value="COMPANY">
+                    Company
+                  </option>
+
+                </select>
+
+              </div>
+
+              <div>
+
+                <label className="mb-2 block text-sm font-semibold text-gray-700">
+                  Priority
+                </label>
+
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-black outline-none focus:border-[#F5C400] focus:ring-2 focus:ring-yellow-100"
+                >
+
+                  <option value="NORMAL">
+                    Normal
+                  </option>
+
+                  <option value="MEDIUM">
+                    Medium
+                  </option>
+
+                  <option value="HIGH">
+                    High
+                  </option>
+
+                </select>
+
+              </div>
+
+              <div>
+
+                <label className="mb-2 block text-sm font-semibold text-gray-700">
+                  Request
                 </label>
 
                 <input
                   required
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Contoh: Request Router untuk customer"
+                  value={request}
+                  onChange={(e) => setRequest(e.target.value)}
+                  placeholder="Contoh: Request Router"
                   className="h-11 w-full rounded-xl border border-gray-300 px-4 text-sm text-black outline-none focus:border-[#F5C400] focus:ring-2 focus:ring-yellow-100"
                 />
 
               </div>
-              <div>
 
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Customer
-                </label>
-
-                <select
-                  required
-                  value={customer}
-                  onChange={(e) => setCustomer(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-black outline-none focus:border-[#F5C400] focus:ring-2 focus:ring-yellow-100"
-                >
-
-                  <option value="">
-                    Pilih Customer
-                  </option>
-
-                  <option value="PT.PTan">
-                    PT.PTan
-                  </option>
-
-                  <option value="PT.ABC">
-                    PT.ABC
-                  </option>
-
-                  <option value="PT.Network">
-                    PT.Network
-                  </option>
-
-                </select>
-
-              </div>
-              <div>
-
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Product
-                </label>
-
-                <select
-                  required
-                  value={product}
-                  onChange={(e) => setProduct(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-black outline-none focus:border-[#F5C400] focus:ring-2 focus:ring-yellow-100"
-                >
-
-                  <option value="">
-                    Pilih Product
-                  </option>
-
-                  <option value="Router">
-                    Router
-                  </option>
-
-                  <option value="Switch">
-                    Switch
-                  </option>
-
-                  <option value="Access Point">
-                    Access Point
-                  </option>
-
-                </select>
-
-              </div>
               <div>
 
                 <label className="mb-2 block text-sm font-semibold text-gray-700">
@@ -496,22 +623,25 @@ export default function SalesTickets() {
                 />
 
               </div>
+
               <div className="flex justify-end gap-3 pt-2">
 
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="h-11 rounded-xl border border-gray-300 px-5 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+                  disabled={submitting}
+                  className="h-11 rounded-xl border border-gray-300 px-5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  className="flex h-11 items-center gap-2 rounded-xl bg-[#F5C400] px-5 text-sm font-semibold text-black transition hover:bg-[#E5B800]"
+                  disabled={submitting}
+                  className="flex h-11 items-center gap-2 rounded-xl bg-[#F5C400] px-5 text-sm font-semibold text-black transition hover:bg-[#E5B800] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Send size={17} />
-                  Send Ticket
+                  {submitting ? "Sending..." : "Send Ticket"}
                 </button>
 
               </div>
