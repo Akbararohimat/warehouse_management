@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -18,6 +19,10 @@ import {
   X,
   Check,
   UserX,
+  ShieldCheck,
+  UserCheck,
+  UserRoundX,
+  Building2,
 } from "lucide-react"
 
 import {
@@ -51,6 +56,8 @@ type FormData = {
   division: "RND" | "SALES"
 }
 
+type FilterType = "ALL" | "ADMIN" | "RND" | "SALES"
+
 export default function UserManagement() {
   const router = useRouter()
 
@@ -61,13 +68,18 @@ export default function UserManagement() {
   const [loadingUsers, setLoadingUsers] = useState(false)
 
   const [search, setSearch] = useState("")
-  const [divisionFilter, setDivisionFilter] = useState("ALL")
+  const [userFilter, setUserFilter] =
+    useState<FilterType>("ALL")
 
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showAddModal, setShowAddModal] =
+    useState(false)
+  const [showEditModal, setShowEditModal] =
+    useState(false)
+  const [showDeleteModal, setShowDeleteModal] =
+    useState(false)
 
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [selectedUser, setSelectedUser] =
+    useState<User | null>(null)
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -78,6 +90,8 @@ export default function UserManagement() {
 
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+  const [statusUpdatingId, setStatusUpdatingId] =
+    useState<string | null>(null)
 
   const getToken = () => {
     return (
@@ -157,7 +171,11 @@ export default function UserManagement() {
 
       return data.user
     } catch (error) {
-      console.error("Get current user error:", error)
+      console.error(
+        "Get current user error:",
+        error
+      )
+
       return null
     }
   }
@@ -197,13 +215,17 @@ export default function UserManagement() {
         }
 
         throw new Error(
-          data.message || "Gagal mengambil data user"
+          data.message ||
+            "Gagal mengambil data user"
         )
       }
 
       setUsers(data.users || [])
     } catch (error) {
-      console.error("Get users error:", error)
+      console.error(
+        "Get users error:",
+        error
+      )
     } finally {
       setLoadingUsers(false)
     }
@@ -227,19 +249,53 @@ export default function UserManagement() {
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
-      const searchValue = search.toLowerCase()
+      const searchValue =
+        search.trim().toLowerCase()
 
       const matchesSearch =
-        user.name.toLowerCase().includes(searchValue) ||
-        user.email.toLowerCase().includes(searchValue)
+        user.name
+          .toLowerCase()
+          .includes(searchValue) ||
+        user.email
+          .toLowerCase()
+          .includes(searchValue)
 
-      const matchesDivision =
-        divisionFilter === "ALL" ||
-        user.division === divisionFilter
+      let matchesFilter = true
 
-      return matchesSearch && matchesDivision
+      if (userFilter === "ADMIN") {
+        matchesFilter = user.role === "ADMIN"
+      }
+
+      if (userFilter === "RND") {
+        matchesFilter =
+          user.division === "RND"
+      }
+
+      if (userFilter === "SALES") {
+        matchesFilter =
+          user.division === "SALES"
+      }
+
+      return (
+        matchesSearch &&
+        matchesFilter
+      )
     })
-  }, [users, search, divisionFilter])
+  }, [users, search, userFilter])
+
+  const totalUsers = users.length
+
+  const activeUsers = users.filter(
+    (user) => user.isActive
+  ).length
+
+  const inactiveUsers = users.filter(
+    (user) => !user.isActive
+  ).length
+
+  const adminUsers = users.filter(
+    (user) => user.role === "ADMIN"
+  ).length
 
   const resetForm = () => {
     setFormData({
@@ -337,7 +393,8 @@ export default function UserManagement() {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
@@ -353,7 +410,8 @@ export default function UserManagement() {
 
       if (!response.ok) {
         setErrorMessage(
-          data.message || "Gagal membuat user"
+          data.message ||
+            "Gagal membuat user"
         )
         return
       }
@@ -363,9 +421,13 @@ export default function UserManagement() {
         ...previousUsers,
       ])
 
-      closeAddModal()
+      setShowAddModal(false)
+      resetForm()
     } catch (error) {
-      console.error("Create user error:", error)
+      console.error(
+        "Create user error:",
+        error
+      )
 
       setErrorMessage(
         "Tidak dapat terhubung ke server"
@@ -380,7 +442,10 @@ export default function UserManagement() {
       return
     }
 
-    if (!formData.name.trim() || !formData.email.trim()) {
+    if (
+      !formData.name.trim() ||
+      !formData.email.trim()
+    ) {
       setErrorMessage(
         "Nama dan email wajib diisi"
       )
@@ -403,7 +468,8 @@ export default function UserManagement() {
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
@@ -411,7 +477,10 @@ export default function UserManagement() {
             email: formData.email,
             division: formData.division,
             ...(formData.password
-              ? { password: formData.password }
+              ? {
+                  password:
+                    formData.password,
+                }
               : {}),
           }),
         }
@@ -421,7 +490,8 @@ export default function UserManagement() {
 
       if (!response.ok) {
         setErrorMessage(
-          data.message || "Gagal memperbarui user"
+          data.message ||
+            "Gagal memperbarui user"
         )
         return
       }
@@ -434,9 +504,14 @@ export default function UserManagement() {
         )
       )
 
-      closeEditModal()
+      setShowEditModal(false)
+      setSelectedUser(null)
+      resetForm()
     } catch (error) {
-      console.error("Update user error:", error)
+      console.error(
+        "Update user error:",
+        error
+      )
 
       setErrorMessage(
         "Tidak dapat terhubung ke server"
@@ -446,7 +521,9 @@ export default function UserManagement() {
     }
   }
 
-  const handleToggleStatus = async (user: User) => {
+  const handleToggleStatus = async (
+    user: User
+  ) => {
     if (user.role === "ADMIN") {
       return
     }
@@ -458,13 +535,16 @@ export default function UserManagement() {
       return
     }
 
+    setStatusUpdatingId(user.id)
+
     try {
       const response = await fetch(
         `http://localhost:5000/api/users/${user.id}/status`,
         {
           method: "PATCH",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
@@ -499,6 +579,8 @@ export default function UserManagement() {
       alert(
         "Tidak dapat terhubung ke server"
       )
+    } finally {
+      setStatusUpdatingId(null)
     }
   }
 
@@ -532,21 +614,30 @@ export default function UserManagement() {
 
       if (!response.ok) {
         setErrorMessage(
-          data.message || "Gagal menghapus user"
+          data.message ||
+            "Gagal menghapus user"
         )
         return
       }
-
       setUsers((previousUsers) =>
-        previousUsers.filter(
-          (user) =>
-            user.id !== selectedUser.id
+        previousUsers.map((user) =>
+          user.id === selectedUser.id
+            ? data.user || {
+                ...user,
+                isActive: false,
+              }
+            : user
         )
       )
 
-      closeDeleteModal()
+      setShowDeleteModal(false)
+      setSelectedUser(null)
+      setErrorMessage("")
     } catch (error) {
-      console.error("Delete user error:", error)
+      console.error(
+        "Delete user error:",
+        error
+      )
 
       setErrorMessage(
         "Tidak dapat terhubung ke server"
@@ -556,132 +647,178 @@ export default function UserManagement() {
     }
   }
 
+  const sidebarItem =
+    "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-white/65 transition-all duration-200 hover:bg-white/[0.07] hover:text-white"
+
+  const activeSidebarItem =
+    "group flex items-center gap-3 rounded-xl bg-white/[0.10] px-4 py-3 text-sm font-semibold text-white shadow-sm"
+
+  const inputClass =
+    "h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#010736] focus:bg-white focus:ring-4 focus:ring-[#010736]/5 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:bg-slate-800 dark:focus:ring-blue-400/10"
+
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-100">
-        <p className="text-sm text-gray-500">
-          Loading...
-        </p>
+      <main className="flex min-h-screen items-center justify-center bg-[#f6f7fb] dark:bg-[#080d1c]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#010736] dark:border-slate-700 dark:border-t-blue-400" />
+
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            Loading User Management...
+          </p>
+        </div>
       </main>
     )
   }
 
   return (
-    <main className="flex min-h-screen bg-gray-100">
+    <main className="min-h-screen bg-[#f6f7fb] text-slate-900 dark:bg-[#080d1c] dark:text-white">
+      <aside className="fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col bg-[#010736] px-4 py-5 text-white">
+        <div className="mb-8 flex items-center gap-3 px-3">
 
-      <aside className="flex w-68 shrink-0 flex-col bg-[#10052D] px-5 py-6 text-white">
-
-        <div className="mb-8 flex items-center gap-3">
-
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-bold text-[#10052D]">
-            {currentUser
-              ? getInitials(currentUser.name)
-              : "AA"}
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
+            <Image
+              src="/OIP.webp"
+              alt="Logo"
+              width={44}
+              height={44}
+              className="h-full w-full object-contain p-1"
+            />
           </div>
 
-          <h2 className="text-xl font-bold">
-            Divisi Admin
-          </h2>
+          <div className="min-w-0">
+            <p className="truncate text-[15px] font-bold tracking-tight">
+              Divisi Admin
+            </p>
+
+            <p className="mt-0.5 text-[11px] text-white/45">
+              Management Portal
+            </p>
+          </div>
 
         </div>
 
-        <p className="mb-3 px-1 text-sm font-semibold text-gray-300">
-          Menu
-        </p>
+        <div className="px-2">
 
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]"
-        >
-          <LayoutDashboard size={19} />
+          <p className="mb-3 px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">
+            Menu
+          </p>
 
-          <span>
-            Dashboard
-          </span>
-        </Link>
+          <div className="space-y-1">
 
-        <Link
-          href="/user-management"
-          className="mt-2 flex items-center gap-3 rounded-full bg-[#33245A] px-4 py-3 text-sm"
-        >
-          <Users size={19} />
+            <Link
+              href="/dashboard"
+              className={sidebarItem}
+            >
+              <LayoutDashboard
+                size={18}
+                className="text-white/55 transition group-hover:text-white"
+              />
 
-          <span>
-            User Management
-          </span>
-        </Link>
+              <span>
+                Dashboard
+              </span>
+            </Link>
 
-        <Link
-          href="/contact-list"
-          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]"
-        >
-          <Users size={19} />
+            <Link
+              href="/user-management"
+              className={activeSidebarItem}
+            >
+              <Users size={18} />
 
-          <span>
-            Contact List
-          </span>
-        </Link>
+              <span>
+                User Management
+              </span>
 
-        <Link
-          href="/request-sales"
-          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]"
-        >
-          <FileText size={19} />
+              <span className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-300" />
+            </Link>
 
-          <span>
-            Request Sales
-          </span>
-        </Link>
+            <Link
+              href="/contact-list"
+              className={sidebarItem}
+            >
+              <Users
+                size={18}
+                className="text-white/55 transition group-hover:text-white"
+              />
 
-        <Link
-          href="/products"
-          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]"
-        >
-          <FileText size={19} />
+              <span>
+                Contact List
+              </span>
+            </Link>
 
-          <span>
-            Products
-          </span>
-        </Link>
+            <Link
+              href="/request-sales"
+              className={sidebarItem}
+            >
+              <FileText
+                size={18}
+                className="text-white/55 transition group-hover:text-white"
+              />
 
-        <Link
-          href="/principal"
-          className="mt-2 flex items-center gap-3 rounded-full px-4 py-3 text-sm transition hover:bg-[#211344]"
-        >
-          <FileText size={19} />
+              <span>
+                Request Sales
+              </span>
+            </Link>
 
-          <span>
-            Vendor/Principal
-          </span>
-        </Link>
+            <Link
+              href="/products"
+              className={sidebarItem}
+            >
+              <FileText
+                size={18}
+                className="text-white/55 transition group-hover:text-white"
+              />
 
-        <div className="mt-6 border-t border-white/10 pt-5" />
+              <span>
+                Products
+              </span>
+            </Link>
 
-        <div className="mt-auto">
+            <Link
+              href="/principal"
+              className={sidebarItem}
+            >
+              <Building2
+                size={18}
+                className="text-white/55 transition group-hover:text-white"
+              />
+
+              <span>
+                Vendor / Principal
+              </span>
+            </Link>
+
+          </div>
+
+        </div>
+        <div className="mt-auto border-t border-white/10 pt-4">
 
           <DropdownMenu>
 
             <DropdownMenuTrigger className="w-full rounded-xl outline-none">
 
-              <div className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[#211344]">
+              <div className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/[0.07]">
 
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-10 w-10 shrink-0 border border-white/10">
 
-                  <AvatarFallback className="bg-white text-[#10052D]">
+                  <AvatarFallback className="bg-white text-sm font-bold text-[#010736]">
                     {currentUser
-                      ? getInitials(currentUser.name)
+                      ? getInitials(
+                          currentUser.name
+                        )
                       : "AA"}
                   </AvatarFallback>
 
                 </Avatar>
 
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
 
-                  <p className="text-sm font-semibold">
-                    {currentUser?.name || "Loading..."}
+                  <p className="truncate text-sm font-semibold text-white">
+                    {currentUser?.name ||
+                      "Loading..."}
                   </p>
 
-                  <p className="text-xs text-gray-300">
+                  <p className="mt-0.5 truncate text-[11px] text-white/45">
                     {currentUser
                       ? getDivisionName(
                           currentUser.division
@@ -691,7 +828,10 @@ export default function UserManagement() {
 
                 </div>
 
-                <ChevronDown size={18} />
+                <ChevronDown
+                  size={16}
+                  className="shrink-0 text-white/45"
+                />
 
               </div>
 
@@ -700,13 +840,16 @@ export default function UserManagement() {
             <DropdownMenuContent
               align="end"
               side="top"
-              className="mb-2 w-52"
+              className="mb-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
             >
 
               <DropdownMenuItem
                 onClick={() =>
-                  router.push("/edit-profile")
+                  router.push(
+                    "/edit-profile"
+                  )
                 }
+                className="rounded-lg"
               >
                 <UserRound className="mr-2 h-4 w-4" />
                 Edit Profile
@@ -716,6 +859,7 @@ export default function UserManagement() {
                 onClick={() =>
                   router.push("/settings")
                 }
+                className="rounded-lg"
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
@@ -725,7 +869,7 @@ export default function UserManagement() {
 
               <DropdownMenuItem
                 onClick={handleLogout}
-                className="text-red-600"
+                className="rounded-lg text-red-600 focus:text-red-600"
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
@@ -738,38 +882,30 @@ export default function UserManagement() {
         </div>
 
       </aside>
-
-      <section className="flex-1">
-
-        <header className="flex h-20 items-center justify-between bg-white px-8">
+      <section className="ml-[260px] min-h-screen">
+        <header className="sticky top-0 z-30 flex min-h-[76px] items-center justify-between border-b border-slate-200/80 bg-[#f6f7fb]/90 px-8 backdrop-blur-xl dark:border-slate-800 dark:bg-[#080d1c]/90">
 
           <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
+              Administration
+            </p>
 
-            <h1 className="text-3xl font-bold text-black">
+            <h1 className="text-[25px] font-bold tracking-tight text-slate-950 dark:text-white">
               User Management
             </h1>
 
-            <p className="text-sm text-gray-500">
+            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
               Kelola akun RnD dan Sales
             </p>
-
           </div>
 
           <div className="flex items-center gap-3">
 
-            <button
-              onClick={openAddModal}
-              className="flex h-10 items-center gap-2 rounded-full bg-[#33245A] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#271b46]"
-            >
-              <Plus size={17} />
-              Add User
-            </button>
-
-            <div className="flex h-10 w-64 items-center gap-2 rounded-full bg-gray-100 px-4 shadow-inner">
+            <div className="hidden h-11 w-[260px] items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 shadow-sm transition focus-within:border-[#010736]/30 focus-within:ring-4 focus-within:ring-[#010736]/5 lg:flex dark:border-slate-700 dark:bg-slate-900 dark:focus-within:border-blue-400/30 dark:focus-within:ring-blue-400/5">
 
               <Search
                 size={17}
-                className="text-gray-600"
+                className="shrink-0 text-slate-400 dark:text-slate-500"
               />
 
               <input
@@ -778,11 +914,30 @@ export default function UserManagement() {
                 onChange={(e) =>
                   setSearch(e.target.value)
                 }
-                placeholder="Find User.."
-                className="w-full bg-transparent text-sm text-gray-600 outline-none placeholder:text-gray-500"
+                placeholder="Cari user..."
+                className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-slate-500"
               />
 
+              {search && (
+                <button
+                  onClick={() =>
+                    setSearch("")
+                  }
+                  className="text-slate-400 transition hover:text-slate-700 dark:hover:text-white"
+                >
+                  <X size={15} />
+                </button>
+              )}
+
             </div>
+
+            <button
+              onClick={openAddModal}
+              className="flex h-11 items-center gap-2 rounded-xl bg-[#010736] px-4 text-sm font-semibold text-white shadow-lg shadow-[#010736]/10 transition hover:bg-[#07115c] active:scale-[0.98] dark:bg-blue-600 dark:shadow-blue-900/20 dark:hover:bg-blue-500"
+            >
+              <Plus size={17} strokeWidth={2.2} />
+              <span>Add User</span>
+            </button>
 
           </div>
 
@@ -790,62 +945,178 @@ export default function UserManagement() {
 
         <div className="p-8">
 
-          <div className="mb-6 flex items-center gap-3">
+          <div className="mb-6 flex h-11 items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 shadow-sm lg:hidden dark:border-slate-700 dark:bg-slate-900">
 
-            <button
-              onClick={() =>
-                setDivisionFilter("ALL")
-              }
-              className={`rounded-full px-5 py-2 text-sm font-medium transition ${
-                divisionFilter === "ALL"
-                  ? "bg-[#33245A] text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              Semua
-            </button>
+            <Search
+              size={17}
+              className="text-slate-400"
+            />
 
-            <button
-              onClick={() =>
-                setDivisionFilter("RND")
+            <input
+              type="text"
+              value={search}
+              onChange={(e) =>
+                setSearch(e.target.value)
               }
-              className={`rounded-full px-5 py-2 text-sm font-medium transition ${
-                divisionFilter === "RND"
-                  ? "bg-[#33245A] text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              RnD
-            </button>
+              placeholder="Cari user..."
+              className="w-full bg-transparent text-sm outline-none dark:text-white"
+            />
 
-            <button
-              onClick={() =>
-                setDivisionFilter("SALES")
-              }
-              className={`rounded-full px-5 py-2 text-sm font-medium transition ${
-                divisionFilter === "SALES"
-                  ? "bg-[#33245A] text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              Sales
-            </button>
+          </div>
+          <div className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+
+              <div className="flex items-start justify-between">
+
+                <div>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Total User
+                  </p>
+
+                  <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
+                    {totalUsers}
+                  </p>
+                </div>
+
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#010736]/[0.06] text-[#010736] dark:bg-blue-400/10 dark:text-blue-400">
+                  <Users size={19} />
+                </div>
+
+              </div>
+
+              <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+                Semua akun terdaftar
+              </p>
+
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+
+              <div className="flex items-start justify-between">
+
+                <div>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    User Aktif
+                  </p>
+
+                  <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
+                    {activeUsers}
+                  </p>
+                </div>
+
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-400">
+                  <UserCheck size={19} />
+                </div>
+
+              </div>
+
+              <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+                Akun yang dapat digunakan
+              </p>
+
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+
+              <div className="flex items-start justify-between">
+
+                <div>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    User Nonaktif
+                  </p>
+
+                  <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
+                    {inactiveUsers}
+                  </p>
+                </div>
+
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600 dark:bg-red-400/10 dark:text-red-400">
+                  <UserRoundX size={19} />
+                </div>
+
+              </div>
+
+              <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+                Akun yang dinonaktifkan
+              </p>
+
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+
+              <div className="flex items-start justify-between">
+
+                <div>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Administrator
+                  </p>
+
+                  <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
+                    {adminUsers}
+                  </p>
+                </div>
+
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-400/10 dark:text-violet-400">
+                  <ShieldCheck size={19} />
+                </div>
+
+              </div>
+
+              <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+                Akun dengan akses admin
+              </p>
+
+            </div>
 
           </div>
 
-          <div className="rounded-2xl bg-white p-6 shadow-md">
+          <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="border-b border-slate-200/80 px-6 py-5 dark:border-slate-800">
 
-            <div className="mb-5 flex items-center justify-between">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
 
-              <div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-950 dark:text-white">
+                    Daftar User
+                  </h2>
 
-                <h2 className="font-bold text-black">
-                  Daftar User
-                </h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    {filteredUsers.length} user ditemukan
+                  </p>
+                </div>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  {filteredUsers.length} user ditemukan
-                </p>
+                <div className="flex w-fit items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
+
+                  {(
+                    [
+                      ["ALL", "Semua"],
+                      ["ADMIN", "Admin"],
+                      ["RND", "RnD"],
+                      ["SALES", "Sales"],
+                    ] as [
+                      FilterType,
+                      string
+                    ][]
+                  ).map(
+                    ([value, label]) => (
+                      <button
+                        key={value}
+                        onClick={() =>
+                          setUserFilter(value)
+                        }
+                        className={`rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
+                          userFilter === value
+                            ? "bg-white text-[#010736] shadow-sm dark:bg-slate-700 dark:text-white"
+                            : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    )
+                  )}
+
+                </div>
 
               </div>
 
@@ -853,198 +1124,285 @@ export default function UserManagement() {
 
             {loadingUsers ? (
 
-              <div className="flex h-40 items-center justify-center">
-                <p className="text-sm text-gray-500">
-                  Mengambil data user...
-                </p>
+              <div className="flex min-h-[360px] items-center justify-center">
+
+                <div className="flex flex-col items-center gap-3">
+
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#010736] dark:border-slate-700 dark:border-t-blue-400" />
+
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Mengambil data user...
+                  </p>
+
+                </div>
+
               </div>
 
             ) : filteredUsers.length === 0 ? (
 
-              <div className="flex h-40 items-center justify-center">
-                <p className="text-sm text-gray-500">
-                  Tidak ada user ditemukan.
+              <div className="flex min-h-[360px] flex-col items-center justify-center px-6">
+
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500">
+                  <Users size={24} />
+                </div>
+
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Tidak ada user ditemukan
                 </p>
+
+                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                  Coba ubah pencarian atau filter.
+                </p>
+
               </div>
 
             ) : (
 
               <div className="overflow-x-auto">
 
-                <table className="w-full">
+                <table className="w-full min-w-[900px]">
 
                   <thead>
+                    <tr className="border-b border-slate-200/80 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-800/40">
 
-                    <tr className="border-b border-gray-200 text-left">
-
-                      <th className="pb-4 text-sm font-semibold text-gray-600">
+                      <th className="px-6 py-4 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                         User
                       </th>
 
-                      <th className="pb-4 text-sm font-semibold text-gray-600">
+                      <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                         Email
                       </th>
 
-                      <th className="pb-4 text-sm font-semibold text-gray-600">
+                      <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                         Division
                       </th>
 
-                      <th className="pb-4 text-sm font-semibold text-gray-600">
+                      <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                         Role
                       </th>
 
-                      <th className="pb-4 text-sm font-semibold text-gray-600">
+                      <th className="px-5 py-4 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                         Status
                       </th>
 
-                      <th className="pb-4 text-right text-sm font-semibold text-gray-600">
+                      <th className="px-6 py-4 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                         Action
                       </th>
 
                     </tr>
-
                   </thead>
 
                   <tbody>
 
-                    {filteredUsers.map((user) => (
+                    {filteredUsers.map(
+                      (user) => (
+                        <tr
+                          key={user.id}
+                          className="group border-b border-slate-100 transition-colors hover:bg-slate-50/70 last:border-0 dark:border-slate-800/80 dark:hover:bg-slate-800/40"
+                        >
 
-                      <tr
-                        key={user.id}
-                        className="border-b border-gray-100 last:border-0"
-                      >
+                          {/* USER */}
+                          <td className="px-6 py-4">
 
-                        <td className="py-4">
+                            <div className="flex items-center gap-3">
 
-                          <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10 shrink-0 border border-slate-200 dark:border-slate-700">
 
-                            <Avatar className="h-10 w-10">
+                                <AvatarFallback
+                                  className={`text-xs font-bold ${
+                                    user.role ===
+                                    "ADMIN"
+                                      ? "bg-[#010736] text-white dark:bg-blue-600"
+                                      : "bg-blue-50 text-[#010736] dark:bg-blue-400/10 dark:text-blue-300"
+                                  }`}
+                                >
+                                  {getInitials(
+                                    user.name
+                                  )}
+                                </AvatarFallback>
 
-                              <AvatarFallback className="bg-[#33245A] text-white">
-                                {getInitials(user.name)}
-                              </AvatarFallback>
+                              </Avatar>
 
-                            </Avatar>
+                              <div className="min-w-0">
 
-                            <div>
-
-                              <p className="text-sm font-semibold text-gray-800">
-                                {user.name}
-                              </p>
-
-                              {user.id === currentUser?.id && (
-                                <p className="text-xs text-[#33245A]">
-                                  Akun Anda
+                                <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+                                  {user.name}
                                 </p>
+
+                                {user.id ===
+                                  currentUser?.id && (
+                                  <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-[#010736] dark:text-blue-400">
+                                    <Check
+                                      size={11}
+                                    />
+                                    Akun Anda
+                                  </p>
+                                )}
+
+                              </div>
+
+                            </div>
+
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <span className="text-sm text-slate-600 dark:text-slate-400">
+                              {user.email}
+                            </span>
+
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+
+                              <Building2
+                                size={12}
+                              />
+
+                              {getDivisionName(
+                                user.division
+                              )}
+
+                            </span>
+
+                          </td>
+
+    
+                          <td className="px-5 py-4">
+
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${
+                                user.role ===
+                                "ADMIN"
+                                  ? "bg-violet-50 text-violet-700 dark:bg-violet-400/10 dark:text-violet-300"
+                                  : "bg-blue-50 text-blue-700 dark:bg-blue-400/10 dark:text-blue-300"
+                              }`}
+                            >
+                              {user.role ===
+                              "ADMIN" ? (
+                                <ShieldCheck
+                                  size={12}
+                                />
+                              ) : (
+                                <Users
+                                  size={12}
+                                />
+                              )}
+
+                              {user.role}
+                            </span>
+
+                          </td>
+
+
+                          <td className="px-5 py-4">
+
+                            <span
+                              className={`inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${
+                                user.isActive
+                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300"
+                                  : "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"
+                              }`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  user.isActive
+                                    ? "bg-emerald-500"
+                                    : "bg-red-500"
+                                }`}
+                              />
+
+                              {user.isActive
+                                ? "Aktif"
+                                : "Nonaktif"}
+                            </span>
+
+                          </td>
+
+                          <td className="px-6 py-4">
+
+                            <div className="flex justify-end gap-1.5">
+
+                              {user.role !==
+                                "ADMIN" ? (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      openEditModal(
+                                        user
+                                      )
+                                    }
+                                    title="Edit user"
+                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-[#010736]/20 hover:bg-[#010736]/5 hover:text-[#010736] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-blue-400/20 dark:hover:bg-blue-400/10 dark:hover:text-blue-400"
+                                  >
+                                    <Pencil
+                                      size={15}
+                                    />
+                                  </button>
+
+                                  <button
+                                    onClick={() =>
+                                      handleToggleStatus(
+                                        user
+                                      )
+                                    }
+                                    disabled={
+                                      statusUpdatingId ===
+                                      user.id
+                                    }
+                                    title={
+                                      user.isActive
+                                        ? "Nonaktifkan"
+                                        : "Aktifkan"
+                                    }
+                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-amber-400/20 dark:hover:bg-amber-400/10 dark:hover:text-amber-400"
+                                  >
+                                    {statusUpdatingId ===
+                                    user.id ? (
+                                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700 dark:border-slate-600 dark:border-t-white" />
+                                    ) : user.isActive ? (
+                                      <UserX
+                                        size={15}
+                                      />
+                                    ) : (
+                                      <Check
+                                        size={15}
+                                      />
+                                    )}
+                                  </button>
+
+                                  <button
+                                    onClick={() =>
+                                      openDeleteModal(
+                                        user
+                                      )
+                                    }
+                                    title="Hapus akses user"
+                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-500 transition hover:bg-red-100 hover:text-red-600 dark:border-red-900/30 dark:bg-red-950/30 dark:text-red-400 dark:hover:bg-red-900/40"
+                                  >
+                                    <Trash2
+                                      size={15}
+                                    />
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-[11px] font-semibold text-slate-400 dark:bg-slate-800 dark:text-slate-500">
+                                  <ShieldCheck
+                                    size={12}
+                                  />
+                                  Protected
+                                </span>
                               )}
 
                             </div>
 
-                          </div>
+                          </td>
 
-                        </td>
-
-                        <td className="py-4 text-sm text-gray-600">
-                          {user.email}
-                        </td>
-
-                        <td className="py-4">
-
-                          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-                            {getDivisionName(user.division)}
-                          </span>
-
-                        </td>
-
-                        <td className="py-4">
-
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-medium ${
-                              user.role === "ADMIN"
-                                ? "bg-purple-100 text-purple-700"
-                                : "bg-blue-100 text-blue-700"
-                            }`}
-                          >
-                            {user.role}
-                          </span>
-
-                        </td>
-
-                        <td className="py-4">
-
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-medium ${
-                              user.isActive
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {user.isActive
-                              ? "Aktif"
-                              : "Nonaktif"}
-                          </span>
-
-                        </td>
-
-                        <td className="py-4">
-
-                          <div className="flex justify-end gap-2">
-
-                            {user.role !== "ADMIN" && (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    openEditModal(user)
-                                  }
-                                  title="Edit user"
-                                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-600 transition hover:bg-gray-200"
-                                >
-                                  <Pencil size={15} />
-                                </button>
-
-                                <button
-                                  onClick={() =>
-                                    handleToggleStatus(user)
-                                  }
-                                  title={
-                                    user.isActive
-                                      ? "Nonaktifkan"
-                                      : "Aktifkan"
-                                  }
-                                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-600 transition hover:bg-gray-200"
-                                >
-                                  {user.isActive ? (
-                                    <UserX size={15} />
-                                  ) : (
-                                    <Check size={15} />
-                                  )}
-                                </button>
-
-                                <button
-                                  onClick={() =>
-                                    openDeleteModal(user)
-                                  }
-                                  title="Hapus user"
-                                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-600 transition hover:bg-red-100"
-                                >
-                                  <Trash2 size={15} />
-                                </button>
-                              </>
-                            )}
-
-                            {user.role === "ADMIN" && (
-                              <span className="px-2 text-xs text-gray-400">
-                                Protected
-                              </span>
-                            )}
-
-                          </div>
-
-                        </td>
-
-                      </tr>
-
-                    ))}
+                        </tr>
+                      )
+                    )}
 
                   </tbody>
 
@@ -1060,32 +1418,41 @@ export default function UserManagement() {
 
       </section>
 
+  
       {showAddModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px]">
-
-          <div className="relative w-[500px] rounded-[32px] bg-white p-7 shadow-2xl">
+          <div className="relative max-h-[90vh] w-full max-w-[500px] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-7 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
 
             <button
               onClick={closeAddModal}
-              className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-black"
+              disabled={submitting}
+              className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed dark:hover:bg-slate-800 dark:hover:text-white"
             >
               <X size={18} />
             </button>
 
-            <h2 className="text-center text-2xl font-bold text-black">
-              Add New User
-            </h2>
+            <div className="pr-10">
 
-            <p className="mt-1 text-center text-sm text-gray-500">
-              Buat akun untuk RnD atau Sales
-            </p>
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#010736] text-white shadow-lg shadow-[#010736]/10 dark:bg-blue-600">
+                <Plus size={21} />
+              </div>
 
-            <div className="mt-6 space-y-4">
+              <h2 className="text-xl font-bold tracking-tight text-slate-950 dark:text-white">
+                Add New User
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Buat akun baru untuk divisi RnD atau Sales.
+              </p>
+
+            </div>
+
+            <div className="mt-7 space-y-5">
 
               <div>
 
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Nama
                 </label>
 
@@ -1098,14 +1465,14 @@ export default function UserManagement() {
                     })
                   }
                   placeholder="Masukkan nama"
-                  className="h-12 w-full rounded-2xl bg-gray-100 px-4 text-sm text-black outline-none focus:ring-2 focus:ring-[#33245A]/30"
+                  className={inputClass}
                 />
 
               </div>
 
               <div>
 
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Email
                 </label>
 
@@ -1119,14 +1486,14 @@ export default function UserManagement() {
                     })
                   }
                   placeholder="Masukkan email"
-                  className="h-12 w-full rounded-2xl bg-gray-100 px-4 text-sm text-black outline-none focus:ring-2 focus:ring-[#33245A]/30"
+                  className={inputClass}
                 />
 
               </div>
 
               <div>
 
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Password
                 </label>
 
@@ -1140,14 +1507,14 @@ export default function UserManagement() {
                     })
                   }
                   placeholder="Masukkan password"
-                  className="h-12 w-full rounded-2xl bg-gray-100 px-4 text-sm text-black outline-none focus:ring-2 focus:ring-[#33245A]/30"
+                  className={inputClass}
                 />
 
               </div>
 
               <div>
 
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Division
                 </label>
 
@@ -1162,7 +1529,7 @@ export default function UserManagement() {
                           | "SALES",
                     })
                   }
-                  className="h-12 w-full rounded-2xl bg-gray-100 px-4 text-sm text-black outline-none focus:ring-2 focus:ring-[#33245A]/30"
+                  className={inputClass}
                 >
                   <option value="RND">
                     RnD
@@ -1171,7 +1538,6 @@ export default function UserManagement() {
                   <option value="SALES">
                     Sales
                   </option>
-
                 </select>
 
               </div>
@@ -1179,218 +1545,29 @@ export default function UserManagement() {
             </div>
 
             {errorMessage && (
-              <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+              <p className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 dark:border-red-900/30 dark:bg-red-950/30 dark:text-red-400">
                 {errorMessage}
               </p>
             )}
 
-            <button
-              onClick={handleCreateUser}
-              disabled={submitting}
-              className="mt-6 h-12 w-full rounded-2xl bg-[#33245A] text-sm font-semibold text-white shadow-md transition hover:bg-[#271b46] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting
-                ? "Membuat akun..."
-                : "Create User"}
-            </button>
-
-          </div>
-
-        </div>
-
-      )}
-
-      {showEditModal && selectedUser && (
-
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px]">
-
-          <div className="relative w-[500px] rounded-[32px] bg-white p-7 shadow-2xl">
-
-            <button
-              onClick={closeEditModal}
-              className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-black"
-            >
-              <X size={18} />
-            </button>
-
-            <h2 className="text-center text-2xl font-bold text-black">
-              Edit User
-            </h2>
-
-            <p className="mt-1 text-center text-sm text-gray-500">
-              Perbarui informasi akun
-            </p>
-
-            <div className="mt-6 space-y-4">
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Nama
-                </label>
-
-                <input
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      name: e.target.value,
-                    })
-                  }
-                  className="h-12 w-full rounded-2xl bg-gray-100 px-4 text-sm text-black outline-none focus:ring-2 focus:ring-[#33245A]/30"
-                />
-
-              </div>
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Email
-                </label>
-
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      email: e.target.value,
-                    })
-                  }
-                  className="h-12 w-full rounded-2xl bg-gray-100 px-4 text-sm text-black outline-none focus:ring-2 focus:ring-[#33245A]/30"
-                />
-
-              </div>
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Password Baru
-                </label>
-
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      password: e.target.value,
-                    })
-                  }
-                  placeholder="Kosongkan jika tidak diubah"
-                  className="h-12 w-full rounded-2xl bg-gray-100 px-4 text-sm text-black outline-none focus:ring-2 focus:ring-[#33245A]/30"
-                />
-
-              </div>
-
-              <div>
-
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Division
-                </label>
-
-                <select
-                  value={formData.division}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      division:
-                        e.target.value as
-                          | "RND"
-                          | "SALES",
-                    })
-                  }
-                  className="h-12 w-full rounded-2xl bg-gray-100 px-4 text-sm text-black outline-none focus:ring-2 focus:ring-[#33245A]/30"
-                >
-                  <option value="RND">
-                    RnD
-                  </option>
-
-                  <option value="SALES">
-                    Sales
-                  </option>
-
-                </select>
-
-              </div>
-
-            </div>
-
-            {errorMessage && (
-              <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-                {errorMessage}
-              </p>
-            )}
-
-            <button
-              onClick={handleUpdateUser}
-              disabled={submitting}
-              className="mt-6 h-12 w-full rounded-2xl bg-[#33245A] text-sm font-semibold text-white shadow-md transition hover:bg-[#271b46] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting
-                ? "Menyimpan..."
-                : "Save Changes"}
-            </button>
-
-          </div>
-
-        </div>
-
-      )}
-
-      {showDeleteModal && selectedUser && (
-
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px]">
-
-          <div className="relative w-[420px] rounded-[32px] bg-white p-7 shadow-2xl">
-
-            <button
-              onClick={closeDeleteModal}
-              className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-black"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
-              <Trash2 size={24} />
-            </div>
-
-            <h2 className="mt-5 text-xl font-bold text-black">
-              Hapus User?
-            </h2>
-
-            <p className="mt-2 text-sm leading-6 text-gray-500">
-              Apakah anda yakin mau menghapus akun{" "}
-              <span className="font-semibold text-gray-800">
-                {selectedUser.name}
-              </span>
-              ? Data akun ini akan dihapus.
-            </p>
-
-            {errorMessage && (
-              <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-                {errorMessage}
-              </p>
-            )}
-
-            <div className="mt-6 flex gap-3">
+            <div className="mt-7 flex gap-3">
 
               <button
-                onClick={closeDeleteModal}
+                onClick={closeAddModal}
                 disabled={submitting}
-                className="h-12 flex-1 rounded-2xl bg-gray-200 text-sm font-semibold text-gray-700 transition hover:bg-gray-300"
+                className="h-12 flex-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 Batal
               </button>
 
               <button
-                onClick={handleDeleteUser}
+                onClick={handleCreateUser}
                 disabled={submitting}
-                className="h-12 flex-1 rounded-2xl bg-red-600 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+                className="h-12 flex-1 rounded-xl bg-[#010736] text-sm font-semibold text-white shadow-lg shadow-[#010736]/10 transition hover:bg-[#07115c] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-500"
               >
                 {submitting
-                  ? "Menghapus..."
-                  : "Hapus"}
+                  ? "Membuat akun..."
+                  : "Create User"}
               </button>
 
             </div>
@@ -1398,8 +1575,245 @@ export default function UserManagement() {
           </div>
 
         </div>
-
       )}
+
+      {/* EDIT MODAL */}
+      {showEditModal &&
+        selectedUser && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+
+            <div className="relative max-h-[90vh] w-full max-w-[500px] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-7 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+
+              <button
+                onClick={closeEditModal}
+                disabled={submitting}
+                className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed dark:hover:bg-slate-800 dark:hover:text-white"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="pr-10">
+
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#010736] dark:bg-blue-400/10 dark:text-blue-400">
+                  <Pencil size={20} />
+                </div>
+
+                <h2 className="text-xl font-bold tracking-tight text-slate-950 dark:text-white">
+                  Edit User
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  Perbarui informasi akun user.
+                </p>
+
+              </div>
+
+              <div className="mt-7 space-y-5">
+
+                <div>
+
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Nama
+                  </label>
+
+                  <input
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        name: e.target.value,
+                      })
+                    }
+                    className={inputClass}
+                  />
+
+                </div>
+
+                <div>
+
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Email
+                  </label>
+
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        email: e.target.value,
+                      })
+                    }
+                    className={inputClass}
+                  />
+
+                </div>
+
+                <div>
+
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Password Baru
+                  </label>
+
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        password:
+                          e.target.value,
+                      })
+                    }
+                    placeholder="Kosongkan jika tidak diubah"
+                    className={inputClass}
+                  />
+
+                </div>
+
+                <div>
+
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Division
+                  </label>
+
+                  <select
+                    value={formData.division}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        division:
+                          e.target.value as
+                            | "RND"
+                            | "SALES",
+                      })
+                    }
+                    className={inputClass}
+                  >
+                    <option value="RND">
+                      RnD
+                    </option>
+
+                    <option value="SALES">
+                      Sales
+                    </option>
+                  </select>
+
+                </div>
+
+              </div>
+
+              {errorMessage && (
+                <p className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 dark:border-red-900/30 dark:bg-red-950/30 dark:text-red-400">
+                  {errorMessage}
+                </p>
+              )}
+
+              <div className="mt-7 flex gap-3">
+
+                <button
+                  onClick={closeEditModal}
+                  disabled={submitting}
+                  className="h-12 flex-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                >
+                  Batal
+                </button>
+
+                <button
+                  onClick={handleUpdateUser}
+                  disabled={submitting}
+                  className="h-12 flex-1 rounded-xl bg-[#010736] text-sm font-semibold text-white shadow-lg shadow-[#010736]/10 transition hover:bg-[#07115c] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-500"
+                >
+                  {submitting
+                    ? "Menyimpan..."
+                    : "Save Changes"}
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+      {showDeleteModal &&
+        selectedUser && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+
+            <div className="relative w-full max-w-[430px] rounded-3xl border border-slate-200 bg-white p-7 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+
+              <button
+                onClick={closeDeleteModal}
+                disabled={submitting}
+                className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed dark:hover:bg-slate-800 dark:hover:text-white"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-400/10 dark:text-red-400">
+                <Trash2 size={21} />
+              </div>
+
+              <h2 className="mt-5 text-xl font-bold tracking-tight text-slate-950 dark:text-white">
+                Hapus Akses User?
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                Apakah Anda yakin ingin menghapus akses akun{" "}
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {selectedUser.name}
+                </span>
+                ?
+              </p>
+
+              <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 dark:border-amber-900/30 dark:bg-amber-950/20">
+
+                <div className="flex gap-2">
+
+                  <div className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400">
+                    <ShieldCheck size={15} />
+                  </div>
+
+                  <p className="text-xs leading-5 text-amber-700 dark:text-amber-400">
+                    Akun akan dinonaktifkan dan data terkait tetap tersimpan.
+                  </p>
+
+                </div>
+
+              </div>
+
+              {errorMessage && (
+                <p className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 dark:border-red-900/30 dark:bg-red-950/30 dark:text-red-400">
+                  {errorMessage}
+                </p>
+              )}
+
+              <div className="mt-6 flex gap-3">
+
+                <button
+                  onClick={closeDeleteModal}
+                  disabled={submitting}
+                  className="h-12 flex-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                >
+                  Batal
+                </button>
+
+                <button
+                  onClick={handleDeleteUser}
+                  disabled={submitting}
+                  className="h-12 flex-1 rounded-xl bg-red-600 text-sm font-semibold text-white shadow-lg shadow-red-600/10 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {submitting
+                    ? "Memproses..."
+                    : "Nonaktifkan"}
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+        )}
 
     </main>
   )

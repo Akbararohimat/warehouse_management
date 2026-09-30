@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
-  FileText,
   Settings,
   UserRound,
   LogOut,
@@ -38,268 +37,177 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-type Principal = {
-  id: number
-  principal: string
-  brands: string[]
-  catalogue?: string
-  catalogueName?: string
+const API_URL = "http://localhost:5000/api"
+
+type Company = {
+  id: string
+  name: string
+  type: "VENDOR" | "PRINCIPAL"
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  description?: string | null
 }
 
 type Product = {
-  id: number
+  id: string
   code?: string
   name?: string
-  nama?: string
-  vendor?: string
-  vendorContactId?: number | null
-  principalId?: number | null
   category?: string
   brand: string
-  model?: string
-  price?: string
-  status?: "Active" | "Inactive"
-  image?: string
-  images?: string[]
-  deskripsi?: string
+  price?: string | number
+  status?: "ACTIVE" | "INACTIVE"
+  imageUrl?: string | null
+  companyId: string
+  contactId?: string | null
+  company?: Company | null
+  contact?: Contact | null
 }
 
 type Contact = {
-  id: number
-  nama: string
-  perusahaan: string
-  principalId?: number | null
-  telepon: string
-  email: string
-  productIds: number[]
+  id: string
+  name: string
+  phone?: string | null
+  email?: string | null
+  position?: string | null
+  companyId: string
+  company?: Company | null
+  products?: Product[]
 }
 
-const initialContacts: Contact[] = [
-  {
-    id: 1,
-    nama: "Akbar arohimat",
-    perusahaan: "PT.PTan",
-    principalId: null,
-    telepon: "08888888",
-    email: "akbar@gmail.com",
-    productIds: [],
-  },
-  {
-    id: 2,
-    nama: "Akbar Versi 2",
-    perusahaan: "PT. ABC",
-    principalId: null,
-    telepon: "08123456789",
-    email: "akbar2@gmail.com",
-    productIds: [],
-  },
-  {
-    id: 3,
-    nama: "Akbar Versi 3",
-    perusahaan: "PT. Jaya",
-    principalId: null,
-    telepon: "08234567890",
-    email: "akbar3@gmail.com",
-    productIds: [],
-  },
-]
-
-const initialProducts: Product[] = [
-  {
-    id: 1,
-    code: "PRD-001",
-    name: "Fiber Optic Cable 12 Core",
-    vendor: "PT.ABC",
-    vendorContactId: null,
-    principalId: null,
-    category: "Fiber Optic",
-    brand: "Furukawa",
-    price: "150000",
-    status: "Active",
-    image:
-      "https://placehold.co/900x600?text=Fiber+Optic",
-    deskripsi:
-      "Fiber optic cable untuk kebutuhan jaringan.",
-  },
-  {
-    id: 2,
-    code: "PRD-002",
-    name: "Router Mikrotik",
-    vendor: "PT.ACB",
-    vendorContactId: null,
-    principalId: null,
-    category: "Network",
-    brand: "MikroTik",
-    price: "2500000",
-    status: "Active",
-    image:
-      "https://placehold.co/900x600?text=Router",
-    deskripsi:
-      "Router untuk kebutuhan jaringan perusahaan.",
-  },
-  {
-    id: 3,
-    code: "PRD-003",
-    name: "Optical Distribution Box",
-    vendor: "PT.DCA",
-    vendorContactId: null,
-    principalId: null,
-    category: "Fiber Optic",
-    brand: "CommScope",
-    price: "450000",
-    status: "Active",
-    image:
-      "https://placehold.co/900x600?text=ODF",
-    deskripsi:
-      "Optical distribution box untuk jaringan fiber optic.",
-  },
-  {
-    id: 4,
-    code: "PRD-004",
-    name: "Network Switch 24 Port",
-    vendor: "PT.CDC",
-    vendorContactId: null,
-    principalId: null,
-    category: "Network",
-    brand: "TP-Link",
-    price: "850000",
-    status: "Inactive",
-    image:
-      "https://placehold.co/900x600?text=Switch",
-    deskripsi:
-      "Network switch 24 port untuk kebutuhan jaringan.",
-  },
-]
-
-function getProductName(
-  product?: Partial<Product> | null
-) {
-  if (!product || typeof product !== "object") {
+function getProductName(product?: Product | null) {
+  if (!product) {
     return "Unnamed Product"
   }
 
-  return product.name || product.nama || "Unnamed Product"
+  return product.name || "Unnamed Product"
 }
 
 function getProductImage(product: Product) {
   if (
-    product.image &&
-    typeof product.image === "string" &&
-    product.image.trim()
+    product.imageUrl &&
+    typeof product.imageUrl === "string" &&
+    product.imageUrl.trim()
   ) {
-    return product.image
-  }
-
-  if (
-    Array.isArray(product.images) &&
-    product.images.length > 0 &&
-    product.images[0]
-  ) {
-    return product.images[0]
+    return product.imageUrl
   }
 
   return "https://placehold.co/900x600?text=Product"
 }
 
 function getProductImages(product: Product) {
-  if (
-    Array.isArray(product.images) &&
-    product.images.length > 0
-  ) {
-    return product.images
-  }
-
   return [getProductImage(product)]
 }
 
 export default function ContactList() {
   const router = useRouter()
+
   const [search, setSearch] = useState("")
   const [selectedProduct, setSelectedProduct] =
     useState("Semua Product")
   const [selectedPrincipal, setSelectedPrincipal] =
     useState("Semua Principal")
+
   const [showForm, setShowForm] = useState(false)
   const [showContactDetail, setShowContactDetail] =
     useState(false)
   const [showProductDetail, setShowProductDetail] =
     useState(false)
+
   const [selectedContact, setSelectedContact] =
     useState<Contact | null>(null)
+
   const [selectedProductDetail, setSelectedProductDetail] =
     useState<Product | null>(null)
-  const [contacts, setContacts] =
-    useState<Contact[]>(initialContacts)
-  const [products, setProducts] =
-    useState<Product[]>(initialProducts)
-  const [principals, setPrincipals] =
-    useState<Principal[]>([])
-  const [hydrated, setHydrated] = useState(false)
+
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [companies, setCompanies] = useState<Company[]>([])
+
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
   const [nama, setNama] = useState("")
-  const [principalId, setPrincipalId] = useState("")
+  const [companyId, setCompanyId] = useState("")
   const [telepon, setTelepon] = useState("")
   const [email, setEmail] = useState("")
 
-  useEffect(() => {
+  const fetchData = async () => {
     try {
-      const storedContacts =
-        localStorage.getItem("rnd_contacts")
+      setLoading(true)
 
-      const storedProducts =
-        localStorage.getItem("rnd_products")
+      const [
+        contactsResponse,
+        companiesResponse,
+        productsResponse,
+      ] = await Promise.all([
+        fetch(`${API_URL}/contacts`),
+        fetch(`${API_URL}/companies`),
+        fetch(`${API_URL}/products`),
+      ])
 
-      const storedPrincipals =
-        localStorage.getItem("rnd_principals")
-
-      if (storedContacts) {
-        const parsedContacts =
-          JSON.parse(storedContacts)
-
-        if (Array.isArray(parsedContacts)) {
-          setContacts(parsedContacts)
-        }
-      } else {
-        localStorage.setItem(
-          "rnd_contacts",
-          JSON.stringify(initialContacts)
-        )
+      if (!contactsResponse.ok) {
+        throw new Error("Gagal mengambil data contact")
       }
 
-      if (storedProducts) {
-        const parsedProducts =
-          JSON.parse(storedProducts)
-
-        if (Array.isArray(parsedProducts)) {
-          setProducts(parsedProducts)
-        }
-      } else {
-        localStorage.setItem(
-          "rnd_products",
-          JSON.stringify(initialProducts)
-        )
+      if (!companiesResponse.ok) {
+        throw new Error("Gagal mengambil data company")
       }
 
-      if (storedPrincipals) {
-        const parsedPrincipals =
-          JSON.parse(storedPrincipals)
+      if (!productsResponse.ok) {
+        throw new Error("Gagal mengambil data product")
+      }
 
-        if (Array.isArray(parsedPrincipals)) {
-          setPrincipals(parsedPrincipals)
-        }
+      const contactsResult =
+        await contactsResponse.json()
+
+      const companiesResult =
+        await companiesResponse.json()
+
+      const productsResult =
+        await productsResponse.json()
+
+      if (contactsResult.success) {
+        setContacts(contactsResult.data || [])
+      } else {
+        setContacts([])
+      }
+
+      if (companiesResult.success) {
+        const principalCompanies = (
+          companiesResult.data || []
+        ).filter(
+          (company: Company) =>
+            company.type === "PRINCIPAL"
+        )
+
+        setCompanies(principalCompanies)
+      } else {
+        setCompanies([])
+      }
+
+      if (productsResult.success) {
+        setProducts(productsResult.data || [])
+      } else {
+        setProducts([])
       }
     } catch (error) {
-      console.error(
-        "Gagal membaca localStorage:",
-        error
-      )
-    }
+      console.error("Gagal mengambil data:", error)
 
-    setHydrated(true)
+      setContacts([])
+      setCompanies([])
+      setProducts([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
   }, [])
 
   useEffect(() => {
-    if (!hydrated) return
-
     const params = new URLSearchParams(
       window.location.search
     )
@@ -309,271 +217,132 @@ export default function ContactList() {
 
     if (!principalFromUrl) return
 
-    const foundPrincipal =
-      principals.find(
-        (principal) =>
-          String(principal.id) ===
-          principalFromUrl
-      )
-
-    if (foundPrincipal) {
-      setSelectedPrincipal(
-        foundPrincipal.principal
-      )
-    }
-  }, [hydrated, principals])
-
-  useEffect(() => {
-    if (!hydrated) return
-
-    localStorage.setItem(
-      "rnd_contacts",
-      JSON.stringify(contacts)
-    )
-  }, [contacts, hydrated])
-  useEffect(() => {
-    if (!hydrated) return
-
-    localStorage.setItem(
-      "rnd_products",
-      JSON.stringify(products)
-    )
-  }, [products, hydrated])
-
-  useEffect(() => {
-    const syncData = () => {
-      try {
-        const storedContacts =
-          localStorage.getItem("rnd_contacts")
-
-        const storedProducts =
-          localStorage.getItem("rnd_products")
-
-        const storedPrincipals =
-          localStorage.getItem("rnd_principals")
-
-        if (storedContacts) {
-          const parsedContacts =
-            JSON.parse(storedContacts)
-
-          if (Array.isArray(parsedContacts)) {
-            setContacts(parsedContacts)
-          }
-        }
-
-        if (storedProducts) {
-          const parsedProducts =
-            JSON.parse(storedProducts)
-
-          if (Array.isArray(parsedProducts)) {
-            setProducts(parsedProducts)
-          }
-        }
-
-        if (storedPrincipals) {
-          const parsedPrincipals =
-            JSON.parse(storedPrincipals)
-
-          if (Array.isArray(parsedPrincipals)) {
-            setPrincipals(parsedPrincipals)
-          }
-        }
-      } catch (error) {
-        console.error(
-          "Gagal sync localStorage:",
-          error
-        )
-      }
-    }
-
-    window.addEventListener(
-      "storage",
-      syncData
+    const foundCompany = companies.find(
+      (company) =>
+        String(company.id) === principalFromUrl
     )
 
-    window.addEventListener(
-      "focus",
-      syncData
-    )
-
-    return () => {
-      window.removeEventListener(
-        "storage",
-        syncData
-      )
-
-      window.removeEventListener(
-        "focus",
-        syncData
-      )
+    if (foundCompany) {
+      setSelectedPrincipal(foundCompany.name)
     }
-  }, [])
+  }, [companies])
 
-  const reloadData = () => {
-    try {
-      const storedContacts =
-        localStorage.getItem("rnd_contacts")
-
-      const storedProducts =
-        localStorage.getItem("rnd_products")
-
-      const storedPrincipals =
-        localStorage.getItem("rnd_principals")
-
-      if (storedContacts) {
-        const parsedContacts =
-          JSON.parse(storedContacts)
-
-        if (Array.isArray(parsedContacts)) {
-          setContacts(parsedContacts)
-        }
-      }
-
-      if (storedProducts) {
-        const parsedProducts =
-          JSON.parse(storedProducts)
-
-        if (Array.isArray(parsedProducts)) {
-          setProducts(parsedProducts)
-        }
-      }
-
-      if (storedPrincipals) {
-        const parsedPrincipals =
-          JSON.parse(storedPrincipals)
-
-        if (Array.isArray(parsedPrincipals)) {
-          setPrincipals(parsedPrincipals)
-        }
-      }
-    } catch (error) {
-      console.error(
-        "Gagal reload data:",
-        error
-      )
-    }
-  }
-
-  const getPrincipalName = (
-    id?: number | null
-  ) => {
-    if (!id) return ""
-
-    const principal =
-      principals.find(
-        (item) => item.id === id
-      )
-
-    return principal?.principal || ""
-  }
-
-  const handleAddContact = () => {
+  const handleAddContact = async () => {
     if (
       !nama.trim() ||
-      !principalId ||
+      !companyId ||
       !telepon.trim() ||
       !email.trim()
     ) {
       return
     }
 
-    const selectedPrincipalData =
-      principals.find(
-        (item) =>
-          String(item.id) === principalId
+    try {
+      setSaving(true)
+
+      const response = await fetch(
+        `${API_URL}/contacts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: nama.trim(),
+            phone: telepon.trim(),
+            email: email.trim(),
+            companyId,
+          }),
+        }
       )
 
-    if (!selectedPrincipalData) {
-      return
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        alert(
+          result.message ||
+            "Gagal menambahkan contact"
+        )
+        return
+      }
+
+      setNama("")
+      setCompanyId("")
+      setTelepon("")
+      setEmail("")
+
+      setShowForm(false)
+
+      await fetchData()
+    } catch (error) {
+      console.error(
+        "Create contact error:",
+        error
+      )
+
+      alert(
+        "Terjadi kesalahan saat menambahkan contact"
+      )
+    } finally {
+      setSaving(false)
     }
-
-    const newContact: Contact = {
-      id: Date.now(),
-      nama: nama.trim(),
-
-      /*
-       * Perusahaan tetap disimpan untuk
-       * kompatibilitas data lama.
-       *
-       * Sumber utamanya tetap principalId.
-       */
-      perusahaan:
-        selectedPrincipalData.principal,
-
-      principalId:
-        selectedPrincipalData.id,
-
-      telepon: telepon.trim(),
-      email: email.trim(),
-      productIds: [],
-    }
-
-    setContacts((prev) => [
-      ...prev,
-      newContact,
-    ])
-
-    setNama("")
-    setPrincipalId("")
-    setTelepon("")
-    setEmail("")
-
-    setShowForm(false)
   }
 
-  const handleDeleteContact = () => {
+  const handleDeleteContact = async () => {
     if (!selectedContact) return
 
-    const contactId =
-      selectedContact.id
+    const confirmed = window.confirm(
+      `Hapus contact "${selectedContact.name}"?`
+    )
 
-    const updatedContacts =
-      contacts.filter(
-        (contact) =>
-          contact.id !== contactId
+    if (!confirmed) return
+
+    try {
+      setDeleting(true)
+
+      const response = await fetch(
+        `${API_URL}/contacts/${selectedContact.id}`,
+        {
+          method: "DELETE",
+        }
       )
 
-    const updatedProducts =
-      products.map((product) => {
-        if (
-          product.vendorContactId ===
-          contactId
-        ) {
-          return {
-            ...product,
-            vendorContactId: null,
-          }
-        }
+      const result = await response.json()
 
-        return product
-      })
+      if (!response.ok || !result.success) {
+        alert(
+          result.message ||
+            "Gagal menghapus contact"
+        )
+        return
+      }
 
-    setContacts(updatedContacts)
-    setProducts(updatedProducts)
+      setSelectedContact(null)
+      setShowContactDetail(false)
 
-    localStorage.setItem(
-      "rnd_contacts",
-      JSON.stringify(updatedContacts)
-    )
+      await fetchData()
+    } catch (error) {
+      console.error(
+        "Delete contact error:",
+        error
+      )
 
-    localStorage.setItem(
-      "rnd_products",
-      JSON.stringify(updatedProducts)
-    )
-
-    setSelectedContact(null)
-    setShowContactDetail(false)
+      alert(
+        "Terjadi kesalahan saat menghapus contact"
+      )
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const principalOptions = useMemo(() => {
     return [
       "Semua Principal",
-      ...principals.map(
-        (principal) =>
-          principal.principal
+      ...companies.map(
+        (company) => company.name
       ),
     ]
-  }, [principals])
+  }, [companies])
 
   const productOptions = useMemo(() => {
     const names = products
@@ -584,126 +353,91 @@ export default function ContactList() {
 
     return [
       "Semua Product",
-      ...Array.from(
-        new Set(names)
-      ),
+      ...Array.from(new Set(names)),
     ]
   }, [products])
 
-  const filteredContacts =
-    contacts.filter((contact) => {
+  const filteredContacts = contacts.filter(
+    (contact) => {
       const keyword =
         search.toLowerCase().trim()
 
+      const contactName =
+        contact.name?.toLowerCase() || ""
+
+      const companyName =
+        contact.company?.name?.toLowerCase() ||
+        ""
+
+      const contactEmail =
+        contact.email?.toLowerCase() || ""
+
       const matchesSearch =
         !keyword ||
-        contact.nama
-          .toLowerCase()
-          .includes(keyword) ||
-        contact.perusahaan
-          .toLowerCase()
-          .includes(keyword) ||
-        contact.email
-          .toLowerCase()
-          .includes(keyword)
+        contactName.includes(keyword) ||
+        companyName.includes(keyword) ||
+        contactEmail.includes(keyword)
+
+      const contactProducts = products.filter(
+        (product) =>
+          product.contactId === contact.id
+      )
 
       const matchesProduct =
-        selectedProduct ===
-          "Semua Product" ||
-        contact.productIds?.some(
-          (productId) => {
-            const product =
-              products.find(
-                (item) =>
-                  item.id === productId
-              )
-
-            return (
-              getProductName(product || {}) ===
-              selectedProduct
-            )
-          }
-        ) ||
-        products.some(
+        selectedProduct === "Semua Product" ||
+        contactProducts.some(
           (product) =>
-            product.vendorContactId ===
-              contact.id &&
             getProductName(product) ===
-              selectedProduct
+            selectedProduct
         )
 
       const matchesPrincipal =
         selectedPrincipal ===
           "Semua Principal" ||
-        contact.perusahaan ===
-          selectedPrincipal ||
-        getPrincipalName(
-          contact.principalId
-        ) === selectedPrincipal
+        contact.company?.name ===
+          selectedPrincipal
 
       return (
         matchesSearch &&
         matchesProduct &&
         matchesPrincipal
       )
-    })
+    }
+  )
 
-  const openContactDetail = (
+  const openContactDetail = async (
     contact: Contact
   ) => {
-    reloadData()
+    try {
+      const response = await fetch(
+        `${API_URL}/contacts/${contact.id}`
+      )
 
-    const storedContacts =
-      localStorage.getItem("rnd_contacts")
+      const result = await response.json()
 
-    let latestContact = contact
-
-    if (storedContacts) {
-      try {
-        const parsedContacts =
-          JSON.parse(storedContacts)
-
-        if (Array.isArray(parsedContacts)) {
-          const found =
-            parsedContacts.find(
-              (item: Contact) =>
-                item.id === contact.id
-            )
-
-          if (found) {
-            latestContact = found
-          }
-        }
-      } catch {
-        // gunakan contact saat ini
+      if (response.ok && result.success) {
+        setSelectedContact(result.data)
+      } else {
+        setSelectedContact(contact)
       }
-    }
+    } catch (error) {
+      console.error(
+        "Get contact detail error:",
+        error
+      )
 
-    setSelectedContact(
-      latestContact
-    )
+      setSelectedContact(contact)
+    }
 
     setShowContactDetail(true)
   }
+
   const getContactProducts = (
     contact: Contact
   ) => {
     return products.filter(
-      (product) => {
-        const byProductIds =
-          contact.productIds?.includes(
-            product.id
-          )
-
-        const byVendorContact =
-          product.vendorContactId ===
-          contact.id
-
-        return (
-          byProductIds ||
-          byVendorContact
-        )
-      }
+      (product) =>
+        product.contactId === contact.id
     )
   }
 
@@ -713,30 +447,33 @@ export default function ContactList() {
     setSelectedProductDetail(product)
     setShowProductDetail(true)
   }
-  return (
-    <main className="flex min-h-screen bg-gray-100">
 
-      <aside className="flex w-68 flex-col bg-[#10052D] px-5 py-6 text-white">
+  return (
+    <main className="flex min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 dark:from-[#020617] dark:via-[#07112f] dark:to-[#020617]">
+
+      <aside className="flex w-68 shrink-0 flex-col bg-[#010736] px-5 py-6 text-white">
 
         <div className="mb-8 flex items-center gap-3">
-
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-bold text-[#10052D]">
-            RnD
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5">
+            <img
+              src="/OIP.webp"
+              alt="RnD Logo"
+              className="h-full w-full object-contain"
+            />
           </div>
 
           <h2 className="text-xl font-bold">
-            Divisi RnD
+            Dashboard RnD
           </h2>
-
         </div>
 
-        <p className="mb-3 text-sm font-semibold uppercase text-gray-300">
+        <p className="mb-3 px-1 text-sm font-semibold text-white/60">
           Menu
         </p>
 
         <Link
           href="/dashboard"
-          className="flex items-center gap-3 rounded-full px-4 py-2.5 text-sm hover:bg-[#211344]"
+          className="relative flex items-center gap-3 px-4 py-3 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
         >
           <LayoutDashboard size={18} />
           Dashboard
@@ -744,67 +481,66 @@ export default function ContactList() {
 
         <Link
           href="/contact-list"
-          className="mt-3 flex items-center gap-3 rounded-full bg-[#33245A] px-4 py-2.5 text-sm"
+          className="relative mt-1 flex items-center gap-3 px-4 py-3 text-sm font-medium text-white transition"
         >
+          <span className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 bg-yellow-400" />
+
           <Users size={18} />
           Contact List
         </Link>
 
         <Link
-          href="/request-sales"
-          className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm hover:bg-[#211344]"
-        >
-          <FileText size={18} />
-          Request Sales
-        </Link>
-
-        <Link
           href="/products"
-          className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm hover:bg-[#211344]"
+          className="relative mt-1 flex items-center gap-3 px-4 py-3 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
         >
           <Package size={18} />
-          Products
+          Product Item
         </Link>
 
         <Link
           href="/principal"
-          className="mt-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-sm hover:bg-[#211344]"
+          className="relative mt-1 flex items-center gap-3 px-4 py-3 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
         >
-          <FileText size={18} />
+          <Building2 size={18} />
           Vendor/Principal
         </Link>
 
-        {/* PROFILE */}
+        <Link
+          href="/product-solution"
+          className="relative mt-1 flex items-center gap-3 px-4 py-3 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
+        >
+          <Package size={18} />
+          Product Solution
+        </Link>
+
+        <div className="mt-6 border-t border-white/10 pt-5" />
 
         <div className="mt-auto">
-
           <DropdownMenu>
-
             <DropdownMenuTrigger className="w-full rounded-xl outline-none">
 
-              <div className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-[#211344]">
+              <div className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/10">
 
                 <Avatar className="h-10 w-10">
-
-                  <AvatarFallback className="bg-white text-[#10052D]">
+                  <AvatarFallback className="bg-white text-[#010736]">
                     AR
                   </AvatarFallback>
-
                 </Avatar>
 
                 <div className="flex-1">
-
-                  <p className="text-sm font-semibold">
+                  <p className="text-sm font-semibold text-white">
                     Akbar arohimat
                   </p>
 
-                  <p className="text-xs text-gray-300">
+                  <p className="text-xs text-white/60">
                     RnD Division
                   </p>
-
                 </div>
 
-                <ChevronDown size={18} />
+                <ChevronDown
+                  size={18}
+                  className="text-white/70"
+                />
 
               </div>
 
@@ -815,12 +551,9 @@ export default function ContactList() {
               side="top"
               className="mb-2 w-52"
             >
-
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(
-                    "/edit-profile"
-                  )
+                  router.push("/edit-profile")
                 }
               >
                 <UserRound className="mr-2 h-4 w-4" />
@@ -829,9 +562,7 @@ export default function ContactList() {
 
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(
-                    "/settings"
-                  )
+                  router.push("/settings")
                 }
               >
                 <Settings className="mr-2 h-4 w-4" />
@@ -849,305 +580,270 @@ export default function ContactList() {
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>
-
             </DropdownMenuContent>
-
           </DropdownMenu>
-
         </div>
 
       </aside>
-      <section className="flex-1">
+        <section className="flex-1">
 
-        <header className="flex h-20 items-center justify-between bg-white px-8">
+          <header className="flex h-20 items-center border-b border-slate-200/70 bg-gradient-to-r from-white via-white to-slate-50 px-8 dark:border-white/10 dark:from-[#07112f] dark:via-[#07112f] dark:to-[#0b1738]">
 
-          <div>
+            <div>
+              <div className="flex items-center gap-2">
 
-            <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold text-black dark:text-white">
+                  Dashboard
+                </h1>
 
-              <h1 className="text-3xl font-bold text-black">
-                Dashboard
-              </h1>
+                <span className="text-xl text-gray-400 dark:text-white/30">
+                  ›
+                </span>
 
-              <span className="text-xl text-gray-400">
-                ›
-              </span>
+                <h2 className="text-xl font-semibold text-black dark:text-white">
+                  Contact List
+                </h2>
 
-              <h2 className="text-xl font-semibold text-black">
-                Contact List
-              </h2>
+              </div>
 
+              <p className="text-sm text-gray-500 dark:text-white/50">
+                Welcome to RnD Web Portal
+              </p>
             </div>
 
-            <p className="text-sm text-gray-500">
-              Welcome to RnD Web Portal
-            </p>
+          </header>
 
-          </div>
+          <div className="p-8">
 
-          <div className="flex items-center gap-3">
+            <div className="mb-4 flex items-center justify-between">
 
-            <button
-              type="button"
-              className="flex h-9 w-16 items-center justify-center rounded-full bg-gray-100 text-black shadow-sm"
-            >
+              <div className="flex items-center gap-3">
 
-              <Plus size={18} />
+                <div className="flex h-11 w-72 items-center gap-2 rounded-full border border-slate-200/70 bg-gradient-to-r from-slate-50 to-white px-4 shadow-sm dark:border-white/10 dark:from-[#0b1738] dark:to-[#101d42]">
 
-              <span className="mx-2 text-gray-400">
-                |
-              </span>
+                  <Search
+                    size={18}
+                    className="text-gray-700 dark:text-white/60"
+                  />
 
-              <ChevronDown size={15} />
+                  <input
+                    type="text"
+                    placeholder="Cari nama, perusahaan, atau email..."
+                    value={search}
+                    onChange={(e) =>
+                      setSearch(e.target.value)
+                    }
+                    className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-500 dark:text-white dark:placeholder:text-white/40"
+                  />
 
-            </button>
+                </div>
 
-            <div className="flex h-10 w-64 items-center gap-2 rounded-full bg-gray-100 px-4 shadow-inner">
+                <div className="relative">
 
-              <Search
-                size={17}
-                className="text-gray-600"
-              />
+                  <select
+                    value={selectedPrincipal}
+                    onChange={(e) =>
+                      setSelectedPrincipal(
+                        e.target.value
+                      )
+                    }
+                    className="h-11 appearance-none rounded-full border border-slate-200/70 bg-gradient-to-r from-white to-slate-50 pl-11 pr-10 text-sm font-medium text-gray-700 shadow-sm outline-none dark:border-white/10 dark:from-[#0b1738] dark:to-[#101d42] dark:text-white"
+                  >
+                    {principalOptions.map(
+                      (companyName) => (
+                        <option
+                          key={companyName}
+                          value={companyName}
+                          className="bg-white text-gray-900 dark:bg-[#0b1738] dark:text-white"
+                        >
+                          {companyName}
+                        </option>
+                      )
+                    )}
+                  </select>
 
-              <span className="text-sm text-gray-500">
-                Find Something...
-              </span>
+                  <Building2
+                    size={17}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/50"
+                  />
 
-            </div>
+                  <ChevronDown
+                    size={16}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/50"
+                  />
 
-          </div>
+                </div>
 
-        </header>
+                <div className="relative">
 
-        <div className="p-8">
+                  <select
+                    value={selectedProduct}
+                    onChange={(e) =>
+                      setSelectedProduct(
+                        e.target.value
+                      )
+                    }
+                    className="h-11 appearance-none rounded-full border border-slate-200/70 bg-gradient-to-r from-white to-slate-50 pl-11 pr-10 text-sm font-medium text-gray-700 shadow-sm outline-none dark:border-white/10 dark:from-[#0b1738] dark:to-[#101d42] dark:text-white"
+                  >
+                    {productOptions.map(
+                      (productName) => (
+                        <option
+                          key={productName}
+                          value={productName}
+                          className="bg-white text-gray-900 dark:bg-[#0b1738] dark:text-white"
+                        >
+                          {productName}
+                        </option>
+                      )
+                    )}
+                  </select>
 
-          <div className="mb-4 flex items-center justify-between">
+                  <Filter
+                    size={17}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/50"
+                  />
 
-            <div className="flex items-center gap-3">
+                  <ChevronDown
+                    size={16}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/50"
+                  />
 
-              <div className="flex h-11 w-72 items-center gap-2 rounded-full bg-white px-4 shadow-md">
-
-                <Search
-                  size={18}
-                  className="text-gray-700"
-                />
-
-                <input
-                  type="text"
-                  placeholder="Find nama, perusahaan, atau email..."
-                  value={search}
-                  onChange={(e) =>
-                    setSearch(
-                      e.target.value
-                    )
-                  }
-                  className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-500"
-                />
-
-              </div>
-
-              <div className="relative">
-
-                <select
-                  value={
-                    selectedPrincipal
-                  }
-                  onChange={(e) =>
-                    setSelectedPrincipal(
-                      e.target.value
-                    )
-                  }
-                  className="h-11 appearance-none rounded-full border-none bg-white pl-11 pr-10 text-sm font-medium text-gray-700 shadow-md outline-none"
-                >
-
-                  {principalOptions.map(
-                    (principalName) => (
-                      <option
-                        key={principalName}
-                        value={principalName}
-                      >
-                        {principalName}
-                      </option>
-                    )
-                  )}
-
-                </select>
-
-                <Building2
-                  size={17}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
-                />
-
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-                />
+                </div>
 
               </div>
 
-              <div className="relative">
-
-                <select
-                  value={
-                    selectedProduct
-                  }
-                  onChange={(e) =>
-                    setSelectedProduct(
-                      e.target.value
-                    )
-                  }
-                  className="h-11 appearance-none rounded-full border-none bg-white pl-11 pr-10 text-sm font-medium text-gray-700 shadow-md outline-none"
-                >
-
-                  {productOptions.map(
-                    (productName) => (
-                      <option
-                        key={productName}
-                        value={productName}
-                      >
-                        {productName}
-                      </option>
-                    )
-                  )}
-
-                </select>
-
-                <Filter
-                  size={17}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
-                />
-
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-                />
-
-              </div>
-
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={
-                  handleDeleteContact
-                }
-                disabled={
-                  !selectedContact
-                }
-                className="flex h-11 w-14 items-center justify-center rounded-2xl bg-red-600 text-white shadow-md transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-              >
-                <Trash2 size={21} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  reloadData()
-                  setShowForm(true)
-                }}
-                className="flex h-11 items-center gap-2 rounded-2xl bg-[#33245A] px-5 text-sm font-semibold text-white shadow-md transition hover:bg-[#271b46]"
-              >
-                <Plus size={18} />
-                Add Contact
-              </button>
-
-            </div>
-
-          </div>
-          <div className="min-h-[520px] rounded-2xl bg-white p-5 shadow-md">
-
-            <div className="grid grid-cols-[1.2fr_1.2fr_1fr_1.3fr] border-b border-gray-400 pb-3 text-sm font-bold text-black">
-
-              <div>
-                Nama
-              </div>
-
-              <div>
-                Perusahaan
-              </div>
-
-              <div>
-                No.Telfon
-              </div>
-
-              <div>
-                Email
-              </div>
-
-            </div>
-
-            {filteredContacts.map(
-              (contact) => (
+              <div className="flex items-center gap-3">
 
                 <button
                   type="button"
-                  key={contact.id}
-                  onClick={() =>
-                    openContactDetail(
-                      contact
-                    )
+                  onClick={handleDeleteContact}
+                  disabled={
+                    !selectedContact ||
+                    deleting
                   }
-                  className="grid w-full grid-cols-[1.2fr_1.2fr_1fr_1.3fr] border-b border-gray-300 py-4 text-left text-sm transition hover:bg-[#f8f6fc]"
+                  className="flex h-11 w-14 items-center justify-center rounded-2xl bg-red-600 text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-white/10"
                 >
-
-                  <div className="font-medium text-gray-900">
-                    {contact.nama}
-                  </div>
-
-                  <div>
-                    {contact.perusahaan}
-                  </div>
-
-                  <div>
-                    {contact.telepon}
-                  </div>
-
-                  <div>
-                    {contact.email}
-                  </div>
-
+                  <Trash2 size={21} />
                 </button>
 
-              )
-            )}
-
-            {filteredContacts.length ===
-              0 && (
-
-              <div className="flex h-40 items-center justify-center">
-
-                <p className="text-sm text-gray-400">
-                  Contact tidak ditemukan.
-                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNama("")
+                    setCompanyId("")
+                    setTelepon("")
+                    setEmail("")
+                    setShowForm(true)
+                  }}
+                  className="flex h-11 items-center gap-2 rounded-2xl bg-[#010736] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#020a55]"
+                >
+                  <Plus size={18} />
+                  Add Contact
+                </button>
 
               </div>
 
-            )}
+            </div>
+
+            <div className="min-h-[520px] rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white via-white to-slate-50 p-5 shadow-sm dark:border-white/10 dark:from-[#07112f] dark:via-[#091633] dark:to-[#0b1738]">
+
+              <div className="grid grid-cols-[1.2fr_1.2fr_1fr_1.3fr] border-b border-slate-300 pb-3 text-sm font-bold text-black dark:border-white/10 dark:text-white">
+
+                <div>
+                  Nama
+                </div>
+
+                <div>
+                  Perusahaan
+                </div>
+
+                <div>
+                  No.Telepon
+                </div>
+
+                <div>
+                  Email
+                </div>
+
+              </div>
+
+              {loading ? (
+
+                <div className="flex h-40 items-center justify-center">
+                  <p className="text-sm text-gray-400 dark:text-white/40">
+                    Memuat data contact...
+                  </p>
+                </div>
+
+              ) : (
+
+                <>
+                  {filteredContacts.map(
+                    (contact) => (
+                      <button
+                        type="button"
+                        key={contact.id}
+                        onClick={() =>
+                          openContactDetail(
+                            contact
+                          )
+                        }
+                        className="grid w-full grid-cols-[1.2fr_1.2fr_1fr_1.3fr] border-b border-slate-200 py-4 text-left text-sm transition hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]"
+                      >
+
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {contact.name}
+                        </div>
+
+                        <div className="text-gray-700 dark:text-white/70">
+                          {contact.company?.name ||
+                            "-"}
+                        </div>
+
+                        <div className="text-gray-700 dark:text-white/70">
+                          {contact.phone || "-"}
+                        </div>
+
+                        <div className="text-gray-700 dark:text-white/70">
+                          {contact.email || "-"}
+                        </div>
+
+                      </button>
+                    )
+                  )}
+
+                  {filteredContacts.length ===
+                    0 && (
+                    <div className="flex h-40 items-center justify-center">
+                      <p className="text-sm text-gray-400 dark:text-white/40">
+                        Contact tidak ditemukan.
+                      </p>
+                    </div>
+                  )}
+                </>
+
+              )}
+
+            </div>
 
           </div>
 
-        </div>
-
-      </section>
+        </section>
       {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 dark:bg-black/60">
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
-          <div className="w-full max-w-[480px] rounded-2xl bg-white p-6 shadow-xl">
+          <div className="w-full max-w-[480px] rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-white to-slate-50 p-6 shadow-xl dark:border-white/10 dark:from-[#07112f] dark:via-[#091633] dark:to-[#0b1738]">
 
             <div className="mb-5 flex items-center justify-between">
 
               <div>
-
-                <h2 className="text-xl font-bold text-black">
+                <h2 className="text-xl font-bold text-black dark:text-white">
                   Add Contact
                 </h2>
 
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-white/50">
                   Tambahkan contact baru
                 </p>
-
               </div>
 
               <button
@@ -1155,7 +851,7 @@ export default function ContactList() {
                 onClick={() =>
                   setShowForm(false)
                 }
-                className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
+                className="rounded-full p-2 text-gray-500 transition hover:bg-slate-100 dark:text-white/60 dark:hover:bg-white/10"
               >
                 <X size={20} />
               </button>
@@ -1165,63 +861,55 @@ export default function ContactList() {
             <div className="space-y-4">
 
               <div>
-
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-white/70">
                   Nama
                 </label>
 
                 <input
                   value={nama}
                   onChange={(e) =>
-                    setNama(
-                      e.target.value
-                    )
+                    setNama(e.target.value)
                   }
                   placeholder="Nama contact"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-black outline-none focus:border-[#33245A]"
+                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-black outline-none transition focus:border-[#010736] dark:border-white/10 dark:bg-[#0b1738] dark:text-white dark:placeholder:text-white/30 dark:focus:border-blue-400"
                 />
-
               </div>
 
               <div>
-
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-white/70">
                   Perusahaan
                 </label>
 
                 <div className="relative">
 
                   <select
-                    value={principalId}
+                    value={companyId}
                     onChange={(e) =>
-                      setPrincipalId(
+                      setCompanyId(
                         e.target.value
                       )
                     }
                     disabled={
-                      principals.length === 0
+                      companies.length === 0
                     }
-                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 pr-10 text-sm text-black outline-none focus:border-[#33245A] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 pr-10 text-sm text-black outline-none transition focus:border-[#010736] disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-white/10 dark:bg-[#0b1738] dark:text-white dark:focus:border-blue-400 dark:disabled:bg-white/5"
                   >
-
                     <option value="">
-                      {principals.length === 0
+                      {companies.length ===
+                      0
                         ? "Belum ada Principal"
-                        : "Pilih contact vendor"}
+                        : "Pilih perusahaan"}
                     </option>
 
-                    {principals.map(
-                      (principal) => (
-
+                    {companies.map(
+                      (company) => (
                         <option
-                          key={principal.id}
-                          value={principal.id}
+                          key={company.id}
+                          value={company.id}
+                          className="bg-white text-gray-900 dark:bg-[#0b1738] dark:text-white"
                         >
-                          {
-                            principal.principal
-                          }
+                          {company.name}
                         </option>
-
                       )
                     )}
 
@@ -1229,45 +917,36 @@ export default function ContactList() {
 
                   <ChevronDown
                     size={17}
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white/50"
                   />
 
                 </div>
 
-                {principals.length ===
-                  0 && (
-
+                {companies.length === 0 && (
                   <p className="mt-1 text-xs text-red-500">
-                    Tambahkan Principal
-                    terlebih dahulu di
-                    Vendor/Principal.
+                    Tambahkan Principal terlebih
+                    dahulu melalui Vendor/Principal.
                   </p>
-
                 )}
-
               </div>
-              <div>
 
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-white/70">
                   No. Telepon
                 </label>
 
                 <input
                   value={telepon}
                   onChange={(e) =>
-                    setTelepon(
-                      e.target.value
-                    )
+                    setTelepon(e.target.value)
                   }
                   placeholder="08xxxxxxxxxx"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-black outline-none focus:border-[#33245A]"
+                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-black outline-none transition focus:border-[#010736] dark:border-white/10 dark:bg-[#0b1738] dark:text-white dark:placeholder:text-white/30 dark:focus:border-blue-400"
                 />
-
               </div>
 
               <div>
-
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-white/70">
                   Email
                 </label>
 
@@ -1275,14 +954,11 @@ export default function ContactList() {
                   type="email"
                   value={email}
                   onChange={(e) =>
-                    setEmail(
-                      e.target.value
-                    )
+                    setEmail(e.target.value)
                   }
                   placeholder="email@gmail.com"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-black outline-none focus:border-[#33245A]"
+                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-black outline-none transition focus:border-[#010736] dark:border-white/10 dark:bg-[#0b1738] dark:text-white dark:placeholder:text-white/30 dark:focus:border-blue-400"
                 />
-
               </div>
 
             </div>
@@ -1294,25 +970,26 @@ export default function ContactList() {
                 onClick={() =>
                   setShowForm(false)
                 }
-                className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                className="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-slate-100 dark:border-white/10 dark:text-white/70 dark:hover:bg-white/10"
               >
                 Batal
               </button>
 
               <button
                 type="button"
-                onClick={
-                  handleAddContact
-                }
+                onClick={handleAddContact}
                 disabled={
+                  saving ||
                   !nama.trim() ||
-                  !principalId ||
+                  !companyId ||
                   !telepon.trim() ||
                   !email.trim()
                 }
-                className="rounded-xl bg-[#33245A] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#271b46] disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-xl bg-[#010736] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#020a55] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Simpan Contact
+                {saving
+                  ? "Menyimpan..."
+                  : "Simpan Contact"}
               </button>
 
             </div>
@@ -1320,303 +997,302 @@ export default function ContactList() {
           </div>
 
         </div>
-
       )}
+
       {showContactDetail &&
         selectedContact && (
+          <div className="fixed inset-0 z-40">
 
-        <div className="fixed inset-0 z-40">
+            <button
+              type="button"
+              aria-label="Close detail"
+              onClick={() =>
+                setShowContactDetail(false)
+              }
+              className="absolute inset-0 bg-black/30 dark:bg-black/60"
+            />
 
-          <button
-            type="button"
-            aria-label="Close detail"
-            onClick={() =>
-              setShowContactDetail(
-                false
-              )
-            }
-            className="absolute inset-0 bg-black/30"
-          />
+            <aside className="absolute right-0 top-0 flex h-full w-[430px] flex-col border-l border-slate-200 bg-gradient-to-br from-white via-white to-slate-50 shadow-2xl dark:border-white/10 dark:from-[#07112f] dark:via-[#091633] dark:to-[#0b1738]">
 
-          <aside className="absolute right-0 top-0 flex h-full w-[430px] flex-col bg-white shadow-2xl">
-
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5">
-
-              <div>
-
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Contact Detail
-                </p>
-
-                <h2 className="mt-1 text-xl font-bold text-black">
-                  {selectedContact.nama}
-                </h2>
-
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setShowContactDetail(
-                    false
-                  )
-                }
-                className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
-              >
-                <X size={20} />
-              </button>
-
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="mb-6 flex items-center gap-4">
-
-                <Avatar className="h-16 w-16">
-
-                  <AvatarFallback className="bg-[#33245A] text-lg font-bold text-white">
-
-                    {selectedContact.nama
-                      .split(" ")
-                      .map(
-                        (item) =>
-                          item[0]
-                      )
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase()}
-
-                  </AvatarFallback>
-
-                </Avatar>
+              <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 dark:border-white/10">
 
                 <div>
-
-                  <h3 className="font-bold text-black">
-                    {selectedContact.nama}
-                  </h3>
-
-                  <p className="text-sm text-gray-500">
-                    {
-                      selectedContact.perusahaan
-                    }
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40">
+                    Contact Detail
                   </p>
 
+                  <h2 className="mt-1 text-xl font-bold text-black dark:text-white">
+                    {selectedContact.name}
+                  </h2>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowContactDetail(
+                      false
+                    )
+                  }
+                  className="rounded-full p-2 text-gray-500 transition hover:bg-slate-100 dark:text-white/60 dark:hover:bg-white/10"
+                >
+                  <X size={20} />
+                </button>
 
               </div>
-              <div className="space-y-3">
 
-                <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-3">
+              <div className="flex-1 overflow-y-auto p-6">
 
-                  <Building2
-                    size={18}
-                    className="text-[#33245A]"
-                  />
+                <div className="mb-6 flex items-center gap-4">
 
-                  <div>
-
-                    <p className="text-xs text-gray-400">
-                      Perusahaan
-                    </p>
-
-                    <p className="text-sm font-medium text-gray-800">
-                      {
-                        selectedContact.perusahaan
-                      }
-                    </p>
-
-                  </div>
-
-                </div>
-
-                <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-3">
-
-                  <Phone
-                    size={18}
-                    className="text-[#33245A]"
-                  />
+                  <Avatar className="h-16 w-16">
+                    <AvatarFallback className="bg-[#010736] text-lg font-bold text-white">
+                      {selectedContact.name
+                        .split(" ")
+                        .map(
+                          (item) =>
+                            item[0]
+                        )
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
 
                   <div>
-
-                    <p className="text-xs text-gray-400">
-                      No. Telepon
-                    </p>
-
-                    <p className="text-sm font-medium text-gray-800">
-                      {
-                        selectedContact.telepon
-                      }
-                    </p>
-
-                  </div>
-
-                </div>
-
-                <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-3">
-
-                  <Mail
-                    size={18}
-                    className="text-[#33245A]"
-                  />
-
-                  <div>
-
-                    <p className="text-xs text-gray-400">
-                      Email
-                    </p>
-
-                    <p className="text-sm font-medium text-gray-800">
-                      {
-                        selectedContact.email
-                      }
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-              <div className="mt-7">
-
-                <div className="mb-3 flex items-center justify-between">
-
-                  <div>
-
-                    <h3 className="font-bold text-black">
-                      Product
+                    <h3 className="font-bold text-black dark:text-white">
+                      {selectedContact.name}
                     </h3>
 
-                    <p className="text-xs text-gray-500">
-                      Product yang digunakan
-                      contact
+                    <p className="text-sm text-gray-500 dark:text-white/50">
+                      {selectedContact.company
+                        ?.name || "-"}
                     </p>
-
                   </div>
-
-                  <Package
-                    size={19}
-                    className="text-[#33245A]"
-                  />
 
                 </div>
 
-                {(() => {
-                  const contactProducts =
-                    getContactProducts(
-                      selectedContact
-                    )
+                <div className="space-y-3">
 
-                  if (
-                    contactProducts.length ===
-                    0
-                  ) {
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-3 dark:border-white/10 dark:from-[#0b1738] dark:to-[#101d42]">
+
+                    <Building2
+                      size={18}
+                      className="text-[#010736] dark:text-blue-300"
+                    />
+
+                    <div>
+                      <p className="text-xs text-gray-400 dark:text-white/40">
+                        Perusahaan
+                      </p>
+
+                      <p className="text-sm font-medium text-gray-800 dark:text-white/80">
+                        {selectedContact.company
+                          ?.name || "-"}
+                      </p>
+                    </div>
+
+                  </div>
+
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-3 dark:border-white/10 dark:from-[#0b1738] dark:to-[#101d42]">
+
+                    <Phone
+                      size={18}
+                      className="text-[#010736] dark:text-blue-300"
+                    />
+
+                    <div>
+                      <p className="text-xs text-gray-400 dark:text-white/40">
+                        No. Telepon
+                      </p>
+
+                      <p className="text-sm font-medium text-gray-800 dark:text-white/80">
+                        {selectedContact.phone ||
+                          "-"}
+                      </p>
+                    </div>
+
+                  </div>
+
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-3 dark:border-white/10 dark:from-[#0b1738] dark:to-[#101d42]">
+
+                    <Mail
+                      size={18}
+                      className="text-[#010736] dark:text-blue-300"
+                    />
+
+                    <div>
+                      <p className="text-xs text-gray-400 dark:text-white/40">
+                        Email
+                      </p>
+
+                      <p className="text-sm font-medium text-gray-800 dark:text-white/80">
+                        {selectedContact.email ||
+                          "-"}
+                      </p>
+                    </div>
+
+                  </div>
+
+                </div>
+                <div className="mt-7">
+
+                  <div className="mb-3 flex items-center justify-between">
+
+                    <div>
+                      <h3 className="font-bold text-black dark:text-white">
+                        Product
+                      </h3>
+
+                      <p className="text-xs text-gray-500 dark:text-white/50">
+                        Product yang digunakan
+                        contact
+                      </p>
+                    </div>
+
+                    <Package
+                      size={19}
+                      className="text-[#010736] dark:text-blue-300"
+                    />
+
+                  </div>
+
+                  {(() => {
+
+                    const contactProducts =
+                      getContactProducts(
+                        selectedContact
+                      )
+
+                    if (
+                      contactProducts.length ===
+                      0
+                    ) {
+                      return (
+                        <div className="rounded-xl border border-dashed border-gray-300 bg-gradient-to-br from-white to-slate-50 p-5 text-center dark:border-white/15 dark:from-[#0b1738] dark:to-[#101d42]">
+
+                          <Package
+                            size={24}
+                            className="mx-auto mb-2 text-gray-300 dark:text-white/20"
+                          />
+
+                          <p className="text-sm font-medium text-gray-500 dark:text-white/50">
+                            Belum ada product
+                          </p>
+
+                          <p className="mt-1 text-xs text-gray-400 dark:text-white/30">
+                            Product dapat
+                            ditambahkan melalui
+                            halaman Products.
+                          </p>
+
+                        </div>
+                      )
+                    }
+
                     return (
-                      <div className="rounded-xl border border-dashed border-gray-300 p-5 text-center">
+                      <div className="space-y-3">
 
-                        <Package
-                          size={24}
-                          className="mx-auto mb-2 text-gray-300"
-                        />
+                        {contactProducts.map(
+                          (product) => (
+                            <button
+                              type="button"
+                              key={product.id}
+                              onClick={() =>
+                                openProductDetail(
+                                  product
+                                )
+                              }
+                              className="group flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-[#010736] hover:bg-slate-50 dark:border-white/10 dark:bg-[#0b1738] dark:hover:border-blue-400/50 dark:hover:bg-white/[0.03]"
+                            >
 
-                        <p className="text-sm font-medium text-gray-500">
-                          Belum ada product
-                        </p>
+                              <img
+                                src={getProductImage(
+                                  product
+                                )}
+                                alt={getProductName(
+                                  product
+                                )}
+                                className="h-16 w-20 rounded-xl object-cover"
+                              />
 
-                        <p className="mt-1 text-xs text-gray-400">
-                          Product dapat
-                          ditambahkan melalui
-                          halaman Products.
-                        </p>
+                              <div className="flex-1">
+
+                                <p className="text-sm font-bold text-black dark:text-white">
+                                  {getProductName(
+                                    product
+                                  )}
+                                </p>
+
+                                <p className="text-xs text-gray-500 dark:text-white/50">
+                                  {product.brand ||
+                                    "-"}
+                                </p>
+
+                                {product.code && (
+                                  <p className="mt-1 text-[11px] text-gray-400 dark:text-white/30">
+                                    {product.code}
+                                  </p>
+                                )}
+
+                              </div>
+
+                              <ChevronRight
+                                size={18}
+                                className="text-gray-400 transition group-hover:translate-x-1 group-hover:text-[#010736] dark:text-white/30 dark:group-hover:text-blue-300"
+                              />
+
+                            </button>
+                          )
+                        )}
 
                       </div>
                     )
-                  }
+                  })()}
 
-                  return (
-                    <div className="space-y-3">
-
-                      {contactProducts.map(
-                        (product) => (
-
-                          <button
-                            type="button"
-                            key={product.id}
-                            onClick={() =>
-                              openProductDetail(
-                                product
-                              )
-                            }
-                            className="group flex w-full items-center gap-3 rounded-2xl border border-gray-200 p-3 text-left transition hover:border-[#33245A] hover:bg-[#f8f6fc]"
-                          >
-
-                            <img
-                              src={getProductImage(
-                                product
-                              )}
-                              alt={getProductName(
-                                product
-                              )}
-                              className="h-16 w-20 rounded-xl object-cover"
-                            />
-
-                            <div className="flex-1">
-
-                              <p className="text-sm font-bold text-black">
-                                {getProductName(
-                                  product
-                                )}
-                              </p>
-
-                              <p className="text-xs text-gray-500">
-                                {product.brand ||
-                                  "-"}
-                                {product.model
-                                  ? ` • ${product.model}`
-                                  : ""}
-                              </p>
-
-                              {product.code && (
-                                <p className="mt-1 text-[11px] text-gray-400">
-                                  {
-                                    product.code
-                                  }
-                                </p>
-                              )}
-
-                            </div>
-
-                            <ChevronRight
-                              size={18}
-                              className="text-gray-400 transition group-hover:translate-x-1 group-hover:text-[#33245A]"
-                            />
-
-                          </button>
-
-                        )
-                      )}
-
-                    </div>
-                  )
-                })()}
+                </div>
 
               </div>
 
-            </div>
+            </aside>
 
-          </aside>
-
-        </div>
-
-      )}
+          </div>
+        )}
       {showProductDetail &&
         selectedProductDetail && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-6 dark:bg-black/70">
+            <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-white to-slate-50 shadow-2xl dark:border-white/10 dark:from-[#07112f] dark:via-[#091633] dark:to-[#0b1738]">
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-white via-white to-slate-50 px-7 py-5 dark:border-white/10 dark:from-[#07112f] dark:via-[#091633] dark:to-[#0b1738]">
 
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-6">
+                <div className="flex items-center gap-3">
 
-          <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-7 py-5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowProductDetail(
+                        false
+                      )
+                    }
+                    className="rounded-full p-2 transition hover:bg-slate-100 dark:hover:bg-white/10"
+                  >
+                    <ArrowLeft
+                      size={19}
+                      className="dark:text-white"
+                    />
+                  </button>
 
-              <div className="flex items-center gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40">
+                      Product Detail
+                    </p>
+
+                    <h2 className="text-xl font-bold text-black dark:text-white">
+                      {getProductName(
+                        selectedProductDetail
+                      )}
+                    </h2>
+                  </div>
+
+                </div>
 
                 <button
                   type="button"
@@ -1625,250 +1301,176 @@ export default function ContactList() {
                       false
                     )
                   }
-                  className="rounded-full p-2 hover:bg-gray-100"
+                  className="rounded-full p-2 text-gray-500 transition hover:bg-slate-100 dark:text-white/60 dark:hover:bg-white/10"
                 >
-                  <ArrowLeft size={19} />
+                  <X size={20} />
                 </button>
 
+              </div>
+              <div className="grid gap-8 p-7 lg:grid-cols-[1.15fr_0.85fr]">
                 <div>
 
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Product Detail
-                  </p>
+                  <div className="mb-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:border-white/10 dark:bg-[#0b1738]">
 
-                  <h2 className="text-xl font-bold text-black">
-                    {getProductName(
+                    <img
+                      src={getProductImage(
+                        selectedProductDetail
+                      )}
+                      alt={getProductName(
+                        selectedProductDetail
+                      )}
+                      className="h-full w-full object-cover"
+                    />
+
+                  </div>
+
+                  <div className="grid grid-cols-5 gap-3">
+
+                    {getProductImages(
                       selectedProductDetail
-                    )}
-                  </h2>
+                    )
+                      .slice(0, 5)
+                      .map(
+                        (
+                          image,
+                          index
+                        ) => (
+                          <div
+                            key={`${image}-${index}`}
+                            className="relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-gray-100 dark:border-white/10 dark:bg-[#0b1738]"
+                          >
 
-                </div>
+                            <img
+                              src={image}
+                              alt={`Product ${
+                                index + 1
+                              }`}
+                              className="h-full w-full object-cover"
+                            />
 
-              </div>
+                            <span className="absolute bottom-1 left-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+                              {index + 1}
+                            </span>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setShowProductDetail(
-                    false
-                  )
-                }
-                className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
-              >
-                <X size={20} />
-              </button>
-
-            </div>
-            <div className="grid gap-8 p-7 lg:grid-cols-[1.15fr_0.85fr]">
-              <div>
-
-                <div className="mb-4 flex aspect-video items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
-
-                  <img
-                    src={getProductImage(
-                      selectedProductDetail
-                    )}
-                    alt={getProductName(
-                      selectedProductDetail
-                    )}
-                    className="h-full w-full object-cover"
-                  />
-
-                </div>
-
-                <div className="grid grid-cols-5 gap-3">
-
-                  {getProductImages(
-                    selectedProductDetail
-                  )
-                    .slice(0, 5)
-                    .map(
-                      (
-                        image,
-                        index
-                      ) => (
-
-                        <div
-                          key={`${image}-${index}`}
-                          className="relative aspect-square overflow-hidden rounded-xl border border-gray-200 bg-gray-100"
-                        >
-
-                          <img
-                            src={image}
-                            alt={`Product ${
-                              index + 1
-                            }`}
-                            className="h-full w-full object-cover"
-                          />
-
-                          <span className="absolute bottom-1 left-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
-                            {index + 1}
-                          </span>
-
-                        </div>
-
-                      )
-                    )}
-
-                </div>
-
-                <div className="mt-3 text-xs text-gray-400">
-                  Maksimal 5 gambar
-                  product
-                </div>
-
-              </div>
-              <div>
-
-                {selectedProductDetail.code && (
-
-                  <div className="mb-5">
-
-                    <p className="text-sm font-medium text-gray-400">
-                      Product Code
-                    </p>
-
-                    <p className="mt-1 text-lg font-bold text-black">
-                      {
-                        selectedProductDetail.code
-                      }
-                    </p>
+                          </div>
+                        )
+                      )}
 
                   </div>
 
-                )}
-
-                {selectedProductDetail.vendor && (
-
-                  <div className="mb-6">
-
-                    <p className="text-sm font-medium text-gray-400">
-                      Perusahaan
-                    </p>
-
-                    <p className="mt-1 text-lg font-bold text-black">
-                      {
-                        selectedProductDetail.vendor
-                      }
-                    </p>
-
+                  <div className="mt-3 text-xs text-gray-400 dark:text-white/30">
+                    Maksimal 5 gambar product
                   </div>
-
-                )}
-
-                {selectedProductDetail.category && (
-
-                  <div className="mb-6">
-
-                    <p className="text-sm font-medium text-gray-400">
-                      Category
-                    </p>
-
-                    <p className="mt-1 text-lg font-bold text-black">
-                      {
-                        selectedProductDetail.category
-                      }
-                    </p>
-
-                  </div>
-
-                )}
-
-                <div className="mb-6">
-
-                  <p className="text-sm font-medium text-gray-400">
-                    Brand
-                  </p>
-
-                  <p className="mt-1 text-lg font-bold text-black">
-                    {
-                      selectedProductDetail.brand
-                    }
-                  </p>
 
                 </div>
+                <div>
 
-                {selectedProductDetail.model && (
+                  {selectedProductDetail.code && (
+                    <div className="mb-5">
 
-                  <div className="mb-6">
+                      <p className="text-sm font-medium text-gray-400 dark:text-white/40">
+                        Product Code
+                      </p>
 
-                    <p className="text-sm font-medium text-gray-400">
-                      Model
-                    </p>
-
-                    <p className="mt-1 text-lg font-bold text-black">
-                      {
-                        selectedProductDetail.model
-                      }
-                    </p>
-
-                  </div>
-
-                )}
-
-                {selectedProductDetail.price && (
-
-                  <div className="mb-6">
-
-                    <p className="text-sm font-medium text-gray-400">
-                      Price
-                    </p>
-
-                    <p className="mt-1 text-lg font-bold text-black">
-                      Rp{" "}
-                      {
-                        selectedProductDetail.price
-                      }
-                    </p>
-
-                  </div>
-
-                )}
-
-                {selectedProductDetail.deskripsi && (
-
-                  <div>
-
-                    <p className="mb-2 text-sm font-medium text-gray-400">
-                      Deskripsi
-                    </p>
-
-                    <div className="rounded-2xl bg-gray-50 p-4">
-
-                      <p className="text-sm leading-6 text-gray-700">
+                      <p className="mt-1 text-lg font-bold text-black dark:text-white">
                         {
-                          selectedProductDetail.deskripsi
+                          selectedProductDetail.code
                         }
                       </p>
 
                     </div>
+                  )}
+
+                  {selectedProductDetail.company
+                    ?.name && (
+                    <div className="mb-6">
+
+                      <p className="text-sm font-medium text-gray-400 dark:text-white/40">
+                        Perusahaan
+                      </p>
+
+                      <p className="mt-1 text-lg font-bold text-black dark:text-white">
+                        {
+                          selectedProductDetail
+                            .company?.name
+                        }
+                      </p>
+
+                    </div>
+                  )}
+
+                  {selectedProductDetail.category && (
+                    <div className="mb-6">
+
+                      <p className="text-sm font-medium text-gray-400 dark:text-white/40">
+                        Category
+                      </p>
+
+                      <p className="mt-1 text-lg font-bold text-black dark:text-white">
+                        {
+                          selectedProductDetail.category
+                        }
+                      </p>
+
+                    </div>
+                  )}
+
+                  <div className="mb-6">
+
+                    <p className="text-sm font-medium text-gray-400 dark:text-white/40">
+                      Brand
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-black dark:text-white">
+                      {
+                        selectedProductDetail.brand
+                      }
+                    </p>
 
                   </div>
 
-                )}
+                  {selectedProductDetail.price !==
+                    undefined && (
+                    <div className="mb-6">
 
-                <div className="mt-7 rounded-2xl bg-[#f1edfa] p-4">
-
-                  <div className="flex items-center gap-3">
-
-                    <Package
-                      size={20}
-                      className="text-[#33245A]"
-                    />
-
-                    <div>
-
-                      <p className="text-sm font-bold text-[#33245A]">
-                        Product Information
+                      <p className="text-sm font-medium text-gray-400 dark:text-white/40">
+                        Price
                       </p>
 
-                      <p className="text-xs text-gray-600">
-                        Product ini terhubung
-                        dengan contact
-                        berdasarkan contact
-                        vendor yang dipilih
-                        saat product dibuat.
+                      <p className="mt-1 text-lg font-bold text-black dark:text-white">
+                        Rp{" "}
+                        {
+                          selectedProductDetail.price
+                        }
                       </p>
+
+                    </div>
+                  )}
+
+                  <div className="mt-7 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4 dark:border-white/10 dark:from-[#0b1738] dark:to-[#101d42]">
+
+                    <div className="flex items-center gap-3">
+
+                      <Package
+                        size={20}
+                        className="text-[#010736] dark:text-blue-300"
+                      />
+
+                      <div>
+
+                        <p className="text-sm font-bold text-[#010736] dark:text-blue-300">
+                          Product Information
+                        </p>
+
+                        <p className="text-xs text-gray-600 dark:text-white/50">
+                          Product ini terhubung
+                          dengan contact
+                          berdasarkan contact
+                          yang dipilih saat
+                          product dibuat.
+                        </p>
+
+                      </div>
 
                     </div>
 
@@ -1881,10 +1483,7 @@ export default function ContactList() {
             </div>
 
           </div>
-
-        </div>
-
-      )}
+        )}
 
     </main>
   )

@@ -36,7 +36,7 @@ export async function getMe(req: AuthRequest, res: Response) {
       });
     }
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       user,
     });
@@ -49,6 +49,130 @@ export async function getMe(req: AuthRequest, res: Response) {
     });
   }
 }
+
+export async function updateMe(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const userId = req.user.userId;
+    const { name, email, division } = req.body;
+
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!existingUser || !existingUser.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: "User tidak ditemukan",
+      });
+    }
+
+    let normalizedEmail = existingUser.email;
+
+    if (email !== undefined) {
+      normalizedEmail = String(email).toLowerCase().trim();
+
+      if (!normalizedEmail) {
+        return res.status(400).json({
+          success: false,
+          message: "Email wajib diisi",
+        });
+      }
+
+      if (normalizedEmail !== existingUser.email) {
+        const emailUsed = await prisma.user.findUnique({
+          where: {
+            email: normalizedEmail,
+          },
+        });
+
+        if (emailUsed && emailUsed.id !== userId) {
+          return res.status(409).json({
+            success: false,
+            message: "Email sudah digunakan",
+          });
+        }
+      }
+    }
+
+    if (name !== undefined && !String(name).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Nama wajib diisi",
+      });
+    }
+
+    if (
+      division !== undefined &&
+      !["RND", "SALES"].includes(String(division).toUpperCase())
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Division hanya boleh RND atau SALES",
+      });
+    }
+
+    const data: {
+      name?: string;
+      email?: string;
+      division?: any;
+      updatedAt: Date;
+    } = {
+      updatedAt: new Date(),
+    };
+
+    if (name !== undefined) {
+      data.name = String(name).trim();
+    }
+
+    if (email !== undefined) {
+      data.email = normalizedEmail;
+    }
+
+    if (division !== undefined) {
+      data.division = String(division).toUpperCase() as any;
+    }
+
+    const user = await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        division: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile berhasil diperbarui",
+      user,
+    });
+  } catch (error) {
+    console.error("Update me error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan pada server",
+    });
+  }
+}
+
 
 export async function getUsers(_req: Request, res: Response) {
   try {
@@ -93,8 +217,30 @@ export async function createUser(req: Request, res: Response) {
       });
     }
 
+    const normalizedName = String(name).trim();
     const normalizedEmail = String(email).toLowerCase().trim();
     const normalizedDivision = String(division).toUpperCase();
+
+    if (!normalizedName) {
+      return res.status(400).json({
+        success: false,
+        message: "Nama wajib diisi",
+      });
+    }
+
+    if (!normalizedEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Email wajib diisi",
+      });
+    }
+
+    if (!password || String(password).length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password minimal 6 karakter",
+      });
+    }
 
     if (!["RND", "SALES"].includes(normalizedDivision)) {
       return res.status(400).json({
@@ -121,7 +267,7 @@ export async function createUser(req: Request, res: Response) {
     const user = await prisma.user.create({
       data: {
         id: crypto.randomUUID(),
-        name: String(name).trim(),
+        name: normalizedName,
         email: normalizedEmail,
         passwordHash,
         role: "EMPLOYEE",
@@ -182,6 +328,13 @@ export async function updateUser(req: Request, res: Response) {
       });
     }
 
+    if (name !== undefined && !String(name).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Nama wajib diisi",
+      });
+    }
+
     if (
       division !== undefined &&
       !["RND", "SALES"].includes(String(division).toUpperCase())
@@ -197,6 +350,13 @@ export async function updateUser(req: Request, res: Response) {
     if (email !== undefined) {
       normalizedEmail = String(email).toLowerCase().trim();
 
+      if (!normalizedEmail) {
+        return res.status(400).json({
+          success: false,
+          message: "Email wajib diisi",
+        });
+      }
+
       if (normalizedEmail !== existingUser.email) {
         const emailUsed = await prisma.user.findUnique({
           where: {
@@ -204,13 +364,24 @@ export async function updateUser(req: Request, res: Response) {
           },
         });
 
-        if (emailUsed) {
+        if (emailUsed && emailUsed.id !== id) {
           return res.status(409).json({
             success: false,
             message: "Email sudah digunakan",
           });
         }
       }
+    }
+
+    if (
+      password !== undefined &&
+      password !== "" &&
+      String(password).length < 6
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Password minimal 6 karakter",
+      });
     }
 
     const data: {
@@ -348,6 +519,16 @@ export async function deleteUser(req: Request, res: Response) {
       where: {
         id,
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        division: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     if (!existingUser) {
@@ -364,22 +545,44 @@ export async function deleteUser(req: Request, res: Response) {
       });
     }
 
-    await prisma.user.delete({
+    if (!existingUser.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: "User sudah dalam status nonaktif",
+      });
+    }
+
+    const user = await prisma.user.update({
       where: {
         id,
+      },
+      data: {
+        isActive: false,
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        division: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
     return res.status(200).json({
       success: true,
-      message: "User berhasil dihapus",
+      message: "User berhasil dinonaktifkan",
+      user,
     });
   } catch (error) {
     console.error("Delete user error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Terjadi kesalahan pada server",
+      message: "Gagal menonaktifkan user",
     });
   }
 }

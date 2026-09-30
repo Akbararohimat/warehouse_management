@@ -42,3 +42,6 @@ next-env.d.ts
 
 CLAUDE.md
 AGENTS.md
+
+# Backend uploaded files
+backend/uploads/

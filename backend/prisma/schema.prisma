@@ -1,98 +1,265 @@
 generator client {
-provider = "prisma-client"
-output   = "../src/generated/prisma"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
-provider = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
-id           String   @id
-name         String
-email        String   @unique
-passwordHash String
-role         Role     @default(EMPLOYEE)
-division     Division
-isActive     Boolean  @default(true)
-createdAt    DateTime @default(now())
-updatedAt    DateTime
+  id                      String            @id
+  name                    String
+  email                   String            @unique
+  passwordHash            String
+  role                    Role              @default(EMPLOYEE)
+  division                Division
+  isActive                Boolean           @default(true)
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  createdCompanies        Company[]
+  createdContacts         Contact[]
+  createdProducts         Product[]
+  createdProductSolutions ProductSolution[]
+  followUps               RequestFollowUp[]
+  handledRequests         SalesRequest[]    @relation("HandledRequests")
+  salesRequests           SalesRequest[]    @relation("SalesRequests")
 
-salesRequests   SalesRequest[]   @relation("SalesRequests")
-handledRequests SalesRequest[]   @relation("HandledRequests")
-followUps       RequestFollowUp[]
-
-@@index([division])
-@@index([isActive])
-@@index([role])
+  @@index([division])
+  @@index([isActive])
+  @@index([role])
 }
 
 model SalesRequest {
-id            String          @id @default(uuid())
-requestFor    RequestFor
-priority      RequestPriority @default(NORMAL)
-request       String
-description   String
-status        RequestStatus   @default(PENDING)
+  id              String          @id @default(uuid())
+  requestFor      RequestFor
+  priority        RequestPriority @default(NORMAL)
+  request         String
+  description     String
+  status          RequestStatus   @default(PENDING)
+  rejectionReason String?
+  requestedById   String
+  handledById     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-requestedById String
-requestedBy   User            @relation("SalesRequests", fields: [requestedById], references: [id])
+  followUps   RequestFollowUp[]
+  handledBy   User?             @relation("HandledRequests", fields: [handledById], references: [id])
+  requestedBy User              @relation("SalesRequests", fields: [requestedById], references: [id])
 
-handledById   String?
-handledBy     User?           @relation("HandledRequests", fields: [handledById], references: [id])
-
-followUps     RequestFollowUp[]
-
-createdAt     DateTime        @default(now())
-updatedAt     DateTime        @updatedAt
-
-@@index([requestedById])
-@@index([handledById])
-@@index([status])
-@@index([priority])
-@@index([createdAt])
+  @@index([requestedById])
+  @@index([handledById])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
 }
 
 model RequestFollowUp {
-id        String       @id @default(uuid())
-requestId String
-userId    String
-message   String
+  id              String        @id @default(uuid())
+  requestId       String
+  userId          String
+  message         String
+  status          RequestStatus @default(ON_PROGRESS)
+  rejectionReason String?
+  createdAt       DateTime      @default(now())
 
-request   SalesRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-user      User         @relation(fields: [userId], references: [id])
+  request SalesRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id])
 
-createdAt DateTime     @default(now())
+  @@index([requestId])
+  @@index([userId])
+  @@index([createdAt])
+}
 
-@@index([requestId])
-@@index([userId])
-@@index([createdAt])
+model Company {
+  id          String      @id @default(uuid())
+  name        String
+  type        CompanyType
+  phone       String?
+  email       String?
+  address     String?
+  website     String?
+  description String?
+  createdById String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  createdBy          User?             @relation(fields: [createdById], references: [id])
+  contacts           Contact[]
+  principalBrands    PrincipalBrand[]
+  products           Product[]
+  principalProducts  Product[]         @relation("PrincipalProducts")
+  productSolutions   ProductSolution[]
+  principalSolutions ProductSolution[] @relation("PrincipalSolutionProducts")
+
+  @@index([name])
+  @@index([type])
+}
+
+model Contact {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String?
+  email       String?
+  position    String?
+  companyId   String
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy        User?             @relation(fields: [createdById], references: [id])
+  products         Product[]
+  productSolutions ProductSolution[]
+
+  @@index([name])
+  @@index([companyId])
+  @@index([email])
+}
+
+model Product {
+  id            String        @id @default(uuid())
+  code          String        @unique
+  name          String
+  category      String
+  brand         String
+  price         Decimal       @db.Decimal(15, 2)
+  status        ProductStatus @default(ACTIVE)
+  pdfUrl        String?
+  description   String?
+  specification String?
+  companyId     String
+  contactId     String?
+  principalId   String?
+  createdById   String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  company   Company        @relation(fields: [companyId], references: [id])
+  contact   Contact?       @relation(fields: [contactId], references: [id])
+  createdBy User?          @relation(fields: [createdById], references: [id])
+  principal Company?       @relation("PrincipalProducts", fields: [principalId], references: [id])
+  images    ProductImage[]
+
+  @@index([name])
+  @@index([category])
+  @@index([brand])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([status])
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  imageUrl  String
+  productId String
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model ProductSolution {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  name          String
+  category      String
+  brand         String
+  imageUrl      String?
+  description   String?
+  specification String?
+  companyId     String
+  contactId     String?
+  principalId   String?
+  createdById   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company   Company                   @relation(fields: [companyId], references: [id])
+  contact   Contact?                  @relation(fields: [contactId], references: [id])
+  createdBy User?                     @relation(fields: [createdById], references: [id])
+  principal Company?                  @relation("PrincipalSolutionProducts", fields: [principalId], references: [id])
+  documents ProductSolutionDocument[]
+
+  @@index([name])
+  @@index([category])
+  @@index([brand])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([principalId])
+}
+
+model ProductSolutionDocument {
+  id                String   @id @default(uuid())
+  name              String
+  fileUrl           String
+  productSolutionId String
+  createdAt         DateTime @default(now())
+
+  productSolution ProductSolution @relation(fields: [productSolutionId], references: [id], onDelete: Cascade)
+
+  @@index([productSolutionId])
+}
+
+model Brand {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  principals PrincipalBrand[]
+
+  @@index([name])
+}
+
+model PrincipalBrand {
+  principalId String
+  brandId     String
+  createdAt   DateTime @default(now())
+
+  brand     Brand   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  principal Company @relation(fields: [principalId], references: [id], onDelete: Cascade)
+
+  @@id([principalId, brandId])
+  @@index([brandId])
+}
+
+enum CompanyType {
+  VENDOR
+  PRINCIPAL
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
 }
 
 enum Role {
-ADMIN
-EMPLOYEE
+  ADMIN
+  EMPLOYEE
 }
 
 enum Division {
-ADMIN
-RND
-SALES
+  ADMIN
+  RND
+  SALES
 }
 
 enum RequestFor {
-CUSTOMER
-COMPANY
+  CUSTOMER
+  COMPANY
 }
 
 enum RequestPriority {
-NORMAL
-MEDIUM
-HIGH
+  NORMAL
+  MEDIUM
+  HIGH
 }
 
 enum RequestStatus {
-PENDING
-ON_PROGRESS
-DONE
+  PENDING
+  ON_PROGRESS
+  DONE
+  REJECTED
 }

@@ -1,11 +1,11 @@
 export default function LoginImage() {
   return (
-    <div className="w-full">
+    <div className="relative hidden h-screen w-1/2 overflow-hidden lg:block">
       <img
-        src="/warehouse.jpg"
-        alt="Warehouse"
-        className="w-full"
+        src="/Contoh1.png"
+        alt="R&D Workspace"
+        className="h-full w-full object-cover"
       />
     </div>
   );
-}
+} 

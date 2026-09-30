@@ -5,6 +5,7 @@ import {
   getUsers,
   createUser,
   updateUser,
+  updateMe,
   updateUserStatus,
   deleteUser,
 } from "../controllers/user.controller";
@@ -18,6 +19,12 @@ router.get(
   "/me",
   authenticate,
   getMe
+);
+
+router.patch(
+  "/me",
+  authenticate,
+  updateMe
 );
 
 router.get(
