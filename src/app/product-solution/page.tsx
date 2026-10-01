@@ -1,6 +1,11 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -101,6 +106,7 @@ type Company = {
   id: string;
   name: string;
   type: "VENDOR" | "PRINCIPAL";
+
   brands?: {
     id: string;
     name: string;
@@ -114,10 +120,16 @@ type Contact = {
   email: string;
   position: string;
   companyId: string;
+
   company?: {
     id: string;
     name: string;
   } | null;
+};
+
+type BrandOption = {
+  id: string;
+  name: string;
 };
 
 export default function ProductSolutionsPage() {
@@ -126,30 +138,72 @@ export default function ProductSolutionsPage() {
     useState("All Categories");
   const [brandFilter, setBrandFilter] =
     useState("All Brands");
+
   const [productSolutions, setProductSolutions] =
     useState<ProductSolution[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
+
+  const [companies, setCompanies] =
+    useState<Company[]>([]);
+
+  const [contacts, setContacts] =
+    useState<Contact[]>([]);
+
   const [showAddProductSolution, setShowAddProductSolution] =
     useState(false);
-  const [loading, setLoading] = useState(true);
-  const [hydrated, setHydrated] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [hydrated, setHydrated] =
+    useState(false);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
   const [productSolutionName, setProductSolutionName] =
     useState("");
-  const [companyId, setCompanyId] = useState("");
-  const [contactId, setContactId] = useState("");
-  const [category, setCategory] = useState("");
-  const [brand, setBrand] = useState("");
-  const [description, setDescription] = useState("");
+
+  const [companyId, setCompanyId] =
+    useState("");
+
+  const [contactId, setContactId] =
+    useState("");
+
+  const [principalId, setPrincipalId] =
+    useState("");
+
+  const [category, setCategory] =
+    useState("");
+
+  const [brand, setBrand] =
+    useState("");
+
+  const [description, setDescription] =
+    useState("");
+
   const [specification, setSpecification] =
     useState("");
 
-  const [image, setImage] = useState<string | null>(null);
-  const [imageName, setImageName] = useState("");
+  const [image, setImage] =
+    useState<string | null>(null);
 
-  const [pdfFiles, setPdfFiles] = useState<File[]>([]);
+  const [imageFile, setImageFile] =
+    useState<File | null>(null);
+
+  const [imageName, setImageName] =
+    useState("");
+
+  const [pdfFiles, setPdfFiles] =
+    useState<File[]>([]);
+
+  /*
+   * =========================
+   * LOAD DATA
+   * =========================
+   */
 
   const loadData = async () => {
     try {
@@ -236,9 +290,17 @@ export default function ProductSolutionsPage() {
           principals: item.principals ?? [],
         }));
 
-      setProductSolutions(mappedProductSolutions);
-      setCompanies(companiesResult.data ?? []);
-      setContacts(contactsResult.data ?? []);
+      setProductSolutions(
+        mappedProductSolutions
+      );
+
+      setCompanies(
+        companiesResult.data ?? []
+      );
+
+      setContacts(
+        contactsResult.data ?? []
+      );
     } catch (err) {
       console.error(err);
 
@@ -256,6 +318,12 @@ export default function ProductSolutionsPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  /*
+   * =========================
+   * FILTER OPTIONS
+   * =========================
+   */
 
   const categories = useMemo(
     () => [
@@ -290,6 +358,12 @@ export default function ProductSolutionsPage() {
     ],
     [productSolutions]
   );
+
+  /*
+   * =========================
+   * FILTER PRODUCT SOLUTION
+   * =========================
+   */
 
   const filteredProductSolutions =
     productSolutions.filter(
@@ -337,7 +411,8 @@ export default function ProductSolutionsPage() {
 
         const matchesBrand =
           brandFilter === "All Brands" ||
-          productSolution.brand === brandFilter;
+          productSolution.brand ===
+            brandFilter;
 
         return (
           Boolean(matchesSearch) &&
@@ -346,6 +421,12 @@ export default function ProductSolutionsPage() {
         );
       }
     );
+
+  /*
+   * =========================
+   * IMAGE URL
+   * =========================
+   */
 
   const getImageUrl = (
     imageUrl: string | null
@@ -363,7 +444,7 @@ export default function ProductSolutionsPage() {
 
   /*
    * =========================
-   * ADD PRODUCT SOLUTION
+   * RESET FORM
    * =========================
    */
 
@@ -371,11 +452,13 @@ export default function ProductSolutionsPage() {
     setProductSolutionName("");
     setCompanyId("");
     setContactId("");
+    setPrincipalId("");
     setCategory("");
     setBrand("");
     setDescription("");
     setSpecification("");
     setImage(null);
+    setImageFile(null);
     setImageName("");
     setPdfFiles([]);
   };
@@ -387,6 +470,12 @@ export default function ProductSolutionsPage() {
     resetAddForm();
   };
 
+  /*
+   * =========================
+   * IMAGE
+   * =========================
+   */
+
   const handleImageChange = (
     event: ChangeEvent<HTMLInputElement>
   ) => {
@@ -395,12 +484,47 @@ export default function ProductSolutionsPage() {
 
     if (!file) return;
 
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setError(
+        "Format gambar harus PNG, JPG, JPEG, atau WEBP."
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError(
+        "Ukuran gambar maksimal 5 MB."
+      );
+
+      event.target.value = "";
+      return;
+    }
+
     const previewUrl =
       URL.createObjectURL(file);
 
     setImage(previewUrl);
+    setImageFile(file);
     setImageName(file.name);
+
+    setError("");
+
+    event.target.value = "";
   };
+
+  /*
+   * =========================
+   * PDF
+   * =========================
+   */
 
   const handlePdfChange = (
     event: ChangeEvent<HTMLInputElement>
@@ -419,6 +543,14 @@ export default function ProductSolutionsPage() {
           .endsWith(".pdf")
     );
 
+    if (validFiles.length !== files.length) {
+      setError(
+        "Hanya file PDF yang diperbolehkan."
+      );
+    } else {
+      setError("");
+    }
+
     setPdfFiles((current) => [
       ...current,
       ...validFiles,
@@ -430,62 +562,302 @@ export default function ProductSolutionsPage() {
   const removePdf = (index: number) => {
     setPdfFiles((current) =>
       current.filter(
-        (_, fileIndex) => fileIndex !== index
+        (_, fileIndex) =>
+          fileIndex !== index
       )
     );
   };
 
-  const principalCompanies = useMemo(
-    () =>
-      companies.filter(
-        (company) =>
-          company.type === "PRINCIPAL"
-      ),
-    [companies]
-  );
+  /*
+   * =========================================================
+   * AVAILABLE BRANDS
+   * =========================================================
+   *
+   * Brand dibuat UNIQUE.
+   *
+   * Contoh:
+   *
+   * PT AFC
+   *   └── Huawei eKit
+   *
+   * PT Wahana Piranti
+   *   └── Huawei eKit
+   *
+   * Dropdown tetap hanya:
+   *
+   * Huawei eKit
+   */
 
   const availableBrands = useMemo(() => {
     const brandMap = new Map<
       string,
-      { id: string; name: string }
+      BrandOption
     >();
 
-    principalCompanies.forEach(
-      (company) => {
-        company.brands?.forEach((item) => {
-          if (!brandMap.has(item.name)) {
-            brandMap.set(item.name, item);
-          }
-        });
-      }
+    companies.forEach((company) => {
+      company.brands?.forEach((item) => {
+        const normalizedName =
+          item.name.trim().toLowerCase();
+
+        if (!normalizedName) return;
+
+        if (!brandMap.has(normalizedName)) {
+          brandMap.set(
+            normalizedName,
+            {
+              id: item.id,
+              name: item.name,
+            }
+          );
+        }
+      });
+    });
+
+    return Array.from(
+      brandMap.values()
+    ).sort((a, b) =>
+      a.name.localeCompare(b.name)
     );
+  }, [companies]);
 
-    return Array.from(brandMap.values());
-  }, [principalCompanies]);
+  /*
+   * =========================================================
+   * SELECTED BRAND
+   * =========================================================
+   */
 
-  const selectedPrincipal = useMemo(() => {
+  const selectedBrand = useMemo(() => {
     if (!brand) return null;
 
     return (
-      principalCompanies.find(
-        (company) =>
-          company.brands?.some(
-            (item) =>
-              item.name.toLowerCase() ===
-              brand.toLowerCase()
-          )
+      availableBrands.find(
+        (item) =>
+          item.name.trim().toLowerCase() ===
+          brand.trim().toLowerCase()
       ) ?? null
     );
-  }, [brand, principalCompanies]);
+  }, [
+    brand,
+    availableBrands,
+  ]);
+
+  /*
+   * =========================================================
+   * COMPANIES FOR SELECTED BRAND
+   * =========================================================
+   *
+   * INI BAGIAN PENTING.
+   *
+   * Semua Company yang memiliki Brand
+   * akan ditampilkan.
+   *
+   * Contoh:
+   *
+   * Huawei eKit
+   * ├── PT AFC
+   * ├── PT Wahana Piranti
+   * ├── PT ABC
+   * └── PT XYZ
+   */
+
+  const companiesForSelectedBrand =
+    useMemo(() => {
+      if (!selectedBrand) {
+        return [];
+      }
+
+      return companies
+        .filter((company) =>
+          company.brands?.some(
+            (item) =>
+              item.name.trim().toLowerCase() ===
+              selectedBrand.name
+                .trim()
+                .toLowerCase()
+          )
+        )
+        .sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
+    }, [
+      companies,
+      selectedBrand,
+    ]);
+
+  /*
+   * =========================================================
+   * SELECTED COMPANY
+   * =========================================================
+   */
+
+  const selectedCompany = useMemo(() => {
+    if (!companyId) return null;
+
+    return (
+      companies.find(
+        (company) =>
+          company.id === companyId
+      ) ?? null
+    );
+  }, [
+    companyId,
+    companies,
+  ]);
+
+  /*
+   * =========================================================
+   * PRINCIPAL CANDIDATES
+   * =========================================================
+   *
+   * Principal harus berasal dari company
+   * yang memiliki Brand yang sama.
+   */
+
+  const principalCandidates =
+    useMemo(() => {
+      if (!selectedBrand) {
+        return [];
+      }
+
+      return companiesForSelectedBrand
+        .filter(
+          (company) =>
+            company.type ===
+            "PRINCIPAL"
+        )
+        .sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
+    }, [
+      selectedBrand,
+      companiesForSelectedBrand,
+    ]);
+
+  /*
+   * =========================================================
+   * SELECTED PRINCIPAL
+   * =========================================================
+   */
+
+  const selectedPrincipal = useMemo(() => {
+    if (!principalId) {
+      return null;
+    }
+
+    return (
+      principalCandidates.find(
+        (principal) =>
+          principal.id ===
+          principalId
+      ) ?? null
+    );
+  }, [
+    principalId,
+    principalCandidates,
+  ]);
+
+  /*
+   * =========================================================
+   * BRAND CHANGE
+   * =========================================================
+   *
+   * Saat Brand berubah:
+   *
+   * Company lama dibuang
+   * Contact lama dibuang
+   * Principal lama dibuang
+   */
+
+  useEffect(() => {
+    setCompanyId("");
+    setContactId("");
+    setPrincipalId("");
+  }, [brand]);
+
+  /*
+   * =========================================================
+   * COMPANY CHANGE
+   * =========================================================
+   *
+   * Saat Company berubah:
+   *
+   * Contact harus reset.
+   *
+   * Kalau Company yang dipilih adalah Principal,
+   * Principal otomatis menjadi Company tersebut.
+   *
+   * Kalau Vendor, Principal dipilih dari
+   * principalCandidates.
+   */
+
+  useEffect(() => {
+    setContactId("");
+
+    if (
+      selectedCompany?.type ===
+      "PRINCIPAL"
+    ) {
+      setPrincipalId(
+        selectedCompany.id
+      );
+
+      return;
+    }
+
+    /*
+     * Kalau hanya ada satu Principal
+     * untuk Brand tersebut, otomatis pilih.
+     */
+
+    if (
+      principalCandidates.length ===
+      1
+    ) {
+      setPrincipalId(
+        principalCandidates[0].id
+      );
+
+      return;
+    }
+
+    /*
+     * Kalau Principal lebih dari satu,
+     * user harus memilih.
+     */
+
+    setPrincipalId("");
+  }, [
+    companyId,
+    selectedCompany,
+    principalCandidates,
+  ]);
+
+  /*
+   * =========================================================
+   * FILTER CONTACT
+   * =========================================================
+   */
 
   const filteredContacts = useMemo(() => {
     if (!companyId) return [];
 
     return contacts.filter(
       (contact) =>
-        contact.companyId === companyId
+        String(contact.companyId) ===
+          String(companyId) ||
+        String(contact.company?.id) ===
+          String(companyId)
     );
-  }, [contacts, companyId]);
+  }, [
+    contacts,
+    companyId,
+  ]);
+
+  /*
+   * =========================================================
+   * GENERATE CODE
+   * =========================================================
+   */
 
   const generateProductSolutionCode = () => {
     const numbers = productSolutions
@@ -513,25 +885,96 @@ export default function ProductSolutionsPage() {
     ).padStart(3, "0")}`;
   };
 
+  /*
+   * =========================================================
+   * ADD PRODUCT SOLUTION
+   * =========================================================
+   */
+
   const handleAddProductSolution =
     async () => {
       if (
         !productSolutionName.trim() ||
-        !companyId ||
-        !category.trim() ||
-        !brand.trim()
+        !brand.trim() ||
+        !category.trim()
       ) {
         setError(
-          "Product Solution Name, Company, Category, dan Brand wajib diisi."
+          "Product Solution Name, Category, dan Brand wajib diisi."
         );
         return;
       }
 
-      if (!selectedPrincipal) {
+      /*
+       * Brand wajib valid.
+       */
+
+      if (!selectedBrand) {
         setError(
-          "Principal untuk brand yang dipilih tidak ditemukan."
+          "Brand yang dipilih tidak valid."
         );
         return;
+      }
+
+      /*
+       * Company wajib dipilih.
+       */
+
+      if (!selectedCompany) {
+        setError(
+          "Silakan pilih Company terlebih dahulu."
+        );
+        return;
+      }
+
+      /*
+       * Kalau Company adalah Principal,
+       * Principal otomatis sudah terisi.
+       */
+
+      if (
+        selectedCompany.type ===
+        "PRINCIPAL"
+      ) {
+        if (!selectedPrincipal) {
+          setError(
+            "Principal tidak valid."
+          );
+          return;
+        }
+      }
+
+      /*
+       * Kalau Company Vendor:
+       *
+       * - 0 Principal = error
+       * - 1 Principal = otomatis
+       * - >1 Principal = user wajib pilih
+       */
+
+      if (
+        selectedCompany.type ===
+        "VENDOR"
+      ) {
+        if (
+          principalCandidates.length ===
+          0
+        ) {
+          setError(
+            "Principal untuk brand yang dipilih tidak ditemukan."
+          );
+          return;
+        }
+
+        if (
+          principalCandidates.length >
+            1 &&
+          !selectedPrincipal
+        ) {
+          setError(
+            "Silakan pilih Principal terlebih dahulu."
+          );
+          return;
+        }
       }
 
       try {
@@ -540,6 +983,12 @@ export default function ProductSolutionsPage() {
 
         const code =
           generateProductSolutionCode();
+
+        /*
+         * =================================================
+         * CREATE PRODUCT SOLUTION
+         * =================================================
+         */
 
         const response = await fetch(
           `${API_BASE_URL}/product-solutions`,
@@ -551,19 +1000,41 @@ export default function ProductSolutionsPage() {
             },
             body: JSON.stringify({
               code,
+
               name:
                 productSolutionName.trim(),
+
               category:
                 category.trim(),
-              brand: brand.trim(),
+
+              brand:
+                selectedBrand.name,
+
               imageUrl: null,
+
               description:
-                description.trim() || null,
+                description.trim() ||
+                null,
+
               specification:
-                specification.trim() || null,
-              companyId,
+                specification.trim() ||
+                null,
+
+              /*
+               * COMPANY DIPILIH USER
+               */
+              companyId:
+                selectedCompany.id,
+
               contactId:
                 contactId || null,
+
+              /*
+               * PRINCIPAL
+               */
+              principalId:
+                selectedPrincipal?.id ??
+                null,
             }),
           }
         );
@@ -584,12 +1055,59 @@ export default function ProductSolutionsPage() {
         const createdProductSolution =
           result.data;
 
+        const createdId =
+          createdProductSolution?.id;
+
         /*
-         * Upload multiple PDF
+         * =================================================
+         * UPLOAD IMAGE
+         * =================================================
          */
+
+        if (
+          imageFile &&
+          createdId
+        ) {
+          const formData =
+            new FormData();
+
+          formData.append(
+            "image",
+            imageFile
+          );
+
+          const imageResponse =
+            await fetch(
+              `${API_BASE_URL}/product-solutions/${createdId}/image`,
+              {
+                method: "POST",
+                body: formData,
+              }
+            );
+
+          const imageResult =
+            await imageResponse.json();
+
+          if (
+            !imageResponse.ok ||
+            !imageResult.success
+          ) {
+            throw new Error(
+              imageResult.message ||
+                "Product Solution berhasil dibuat, tetapi gambar gagal diupload."
+            );
+          }
+        }
+
+        /*
+         * =================================================
+         * UPLOAD MULTIPLE PDF
+         * =================================================
+         */
+
         if (
           pdfFiles.length > 0 &&
-          createdProductSolution?.id
+          createdId
         ) {
           const formData =
             new FormData();
@@ -603,7 +1121,7 @@ export default function ProductSolutionsPage() {
 
           const documentResponse =
             await fetch(
-              `${API_BASE_URL}/product-solutions/${createdProductSolution.id}/documents`,
+              `${API_BASE_URL}/product-solutions/${createdId}/documents`,
               {
                 method: "POST",
                 body: formData,
@@ -624,11 +1142,17 @@ export default function ProductSolutionsPage() {
           }
         }
 
-        const createdId =
-          createdProductSolution?.id;
+        /*
+         * =================================================
+         * FINISH
+         * =================================================
+         */
 
         resetAddForm();
-        setShowAddProductSolution(false);
+
+        setShowAddProductSolution(
+          false
+        );
 
         await loadData();
 
@@ -651,6 +1175,8 @@ export default function ProductSolutionsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* HEADER */}
+
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex h-16 items-center justify-between">
@@ -692,7 +1218,11 @@ export default function ProductSolutionsPage() {
         </div>
       </header>
 
+      {/* MAIN */}
+
       <main className="mx-auto max-w-7xl px-6 py-8">
+        {/* SEARCH + FILTER */}
+
         <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row">
             <div className="relative flex-1">
@@ -725,7 +1255,9 @@ export default function ProductSolutionsPage() {
 
             <FilterSelect
               value={categoryFilter}
-              onChange={setCategoryFilter}
+              onChange={
+                setCategoryFilter
+              }
               options={categories}
             />
 
@@ -736,6 +1268,8 @@ export default function ProductSolutionsPage() {
             />
           </div>
         </div>
+
+        {/* TABLE */}
 
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-5 py-4">
@@ -882,6 +1416,9 @@ export default function ProductSolutionsPage() {
           </div>
         </div>
       </main>
+
+      {/* ADD PRODUCT SOLUTION MODAL */}
+
       {showAddProductSolution && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/45 px-4 py-6"
@@ -893,6 +1430,8 @@ export default function ProductSolutionsPage() {
               event.stopPropagation()
             }
           >
+            {/* MODAL HEADER */}
+
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
               <div>
                 <h2 className="text-xl font-semibold text-[#010736]">
@@ -914,8 +1453,12 @@ export default function ProductSolutionsPage() {
               </button>
             </div>
 
+            {/* MODAL BODY */}
+
             <div className="max-h-[75vh] overflow-y-auto p-6">
               <div className="grid gap-6 md:grid-cols-[180px_1fr]">
+                {/* IMAGE */}
+
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">
                     Product Solution Photo
@@ -940,7 +1483,7 @@ export default function ProductSolutionsPage() {
                         </p>
 
                         <p className="mt-1 px-4 text-center text-xs text-slate-400">
-                          PNG, JPG atau JPEG
+                          PNG, JPG, JPEG atau WEBP
                         </p>
                       </>
                     )}
@@ -949,7 +1492,7 @@ export default function ProductSolutionsPage() {
                   <input
                     id="product-solution-image"
                     type="file"
-                    accept="image/png,image/jpeg,image/jpg"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
                     onChange={
                       handleImageChange
                     }
@@ -962,7 +1505,12 @@ export default function ProductSolutionsPage() {
                     </p>
                   )}
                 </div>
+
+                {/* FORM */}
+
                 <div className="space-y-4">
+                  {/* NAME */}
+
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
                       Product Solution Name
@@ -982,107 +1530,11 @@ export default function ProductSolutionsPage() {
                       className="h-11 w-full rounded-lg border border-slate-200 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
                     />
                   </div>
+
+                  {/* BRAND + COMPANY */}
+
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Company
-                      </label>
-
-                      <div className="relative">
-                        <select
-                          value={companyId}
-                          onChange={(e) => {
-                            setCompanyId(
-                              e.target.value
-                            );
-                            setContactId("");
-                          }}
-                          className="h-11 w-full appearance-none rounded-lg border border-slate-200 bg-white px-4 pr-10 text-sm text-slate-800 outline-none transition focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
-                        >
-                          <option value="">
-                            Pilih company
-                          </option>
-
-                          {companies
-                            .filter(
-                              (company) =>
-                                company.type ===
-                                "VENDOR"
-                            )
-                            .map((company) => (
-                              <option
-                                key={company.id}
-                                value={
-                                  company.id
-                                }
-                              >
-                                {company.name}
-                              </option>
-                            ))}
-                        </select>
-
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Contact
-                      </label>
-
-                      <div className="relative">
-                        <select
-                          value={contactId}
-                          onChange={(e) =>
-                            setContactId(
-                              e.target.value
-                            )
-                          }
-                          disabled={!companyId}
-                          className="h-11 w-full appearance-none rounded-lg border border-slate-200 bg-white px-4 pr-10 text-sm text-slate-800 outline-none transition focus:border-[#010736] focus:ring-1 focus:ring-[#010736] disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
-                        >
-                          <option value="">
-                            {companyId
-                              ? "Pilih contact"
-                              : "Pilih company dulu"}
-                          </option>
-
-                          {filteredContacts.map(
-                            (contact) => (
-                              <option
-                                key={contact.id}
-                                value={
-                                  contact.id
-                                }
-                              >
-                                {contact.name}
-                              </option>
-                            )
-                          )}
-                        </select>
-
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-700">
-                        Category
-                      </label>
-
-                      <input
-                        type="text"
-                        value={category}
-                        onChange={(e) =>
-                          setCategory(
-                            e.target.value
-                          )
-                        }
-                        placeholder="Contoh: Network Solution"
-                        className="h-11 w-full rounded-lg border border-slate-200 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
-                      />
-                    </div>
+                    {/* BRAND */}
 
                     <div>
                       <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -1092,11 +1544,23 @@ export default function ProductSolutionsPage() {
                       <div className="relative">
                         <select
                           value={brand}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setBrand(
                               e.target.value
-                            )
-                          }
+                            );
+
+                            setCompanyId(
+                              ""
+                            );
+
+                            setContactId(
+                              ""
+                            );
+
+                            setPrincipalId(
+                              ""
+                            );
+                          }}
                           className="h-11 w-full appearance-none rounded-lg border border-slate-200 bg-white px-4 pr-10 text-sm text-slate-800 outline-none transition focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
                         >
                           <option value="">
@@ -1119,24 +1583,273 @@ export default function ProductSolutionsPage() {
 
                         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       </div>
+
+                      {selectedBrand && (
+                        <p className="mt-1.5 text-xs text-slate-400">
+                          {
+                            companiesForSelectedBrand.length
+                          }{" "}
+                          company terdaftar
+                          pada brand ini
+                        </p>
+                      )}
+                    </div>
+
+                    {/* COMPANY */}
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">
+                        Company
+                      </label>
+
+                      <div className="relative">
+                        <select
+                          value={companyId}
+                          onChange={(e) => {
+                            setCompanyId(
+                              e.target.value
+                            );
+
+                            setContactId(
+                              ""
+                            );
+
+                            const selected =
+                              companies.find(
+                                (
+                                  company
+                                ) =>
+                                  company.id ===
+                                  e.target.value
+                              );
+
+                            if (
+                              selected
+                                ?.type ===
+                              "PRINCIPAL"
+                            ) {
+                              setPrincipalId(
+                                selected.id
+                              );
+                            } else {
+                              setPrincipalId(
+                                ""
+                              );
+                            }
+                          }}
+                          disabled={
+                            !selectedBrand
+                          }
+                          className="h-11 w-full appearance-none rounded-lg border border-slate-200 bg-white px-4 pr-10 text-sm text-slate-800 outline-none transition focus:border-[#010736] focus:ring-1 focus:ring-[#010736] disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                        >
+                          <option value="">
+                            {selectedBrand
+                              ? companiesForSelectedBrand.length >
+                                0
+                                ? "Pilih company"
+                                : "Tidak ada company"
+                              : "Pilih brand dulu"}
+                          </option>
+
+                          {companiesForSelectedBrand.map(
+                            (company) => (
+                              <option
+                                key={
+                                  company.id
+                                }
+                                value={
+                                  company.id
+                                }
+                              >
+                                {company.name}{" "}
+                                (
+                                {
+                                  company.type
+                                }
+                                )
+                              </option>
+                            )
+                          )}
+                        </select>
+
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      </div>
                     </div>
                   </div>
+
+                  {/* CONTACT */}
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Contact
+                    </label>
+
+                    <div className="relative">
+                      <select
+                        value={contactId}
+                        onChange={(e) =>
+                          setContactId(
+                            e.target.value
+                          )
+                        }
+                        disabled={!companyId}
+                        className="h-11 w-full appearance-none rounded-lg border border-slate-200 bg-white px-4 pr-10 text-sm text-slate-800 outline-none transition focus:border-[#010736] focus:ring-1 focus:ring-[#010736] disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                      >
+                        <option value="">
+                          {companyId
+                            ? filteredContacts.length >
+                              0
+                              ? "Pilih contact"
+                              : "Tidak ada contact"
+                            : "Pilih company dulu"}
+                        </option>
+
+                        {filteredContacts.map(
+                          (contact) => (
+                            <option
+                              key={contact.id}
+                              value={
+                                contact.id
+                              }
+                            >
+                              {contact.name}
+                            </option>
+                          )
+                        )}
+                      </select>
+
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* CATEGORY */}
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Category
+                    </label>
+
+                    <input
+                      type="text"
+                      value={category}
+                      onChange={(e) =>
+                        setCategory(
+                          e.target.value
+                        )
+                      }
+                      placeholder="Contoh: Network Solution"
+                      className="h-11 w-full rounded-lg border border-slate-200 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
+                    />
+                  </div>
+
+                  {/* PRINCIPAL */}
+
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
                       Principal
                     </label>
 
-                    <input
-                      type="text"
-                      value={
-                        selectedPrincipal?.name ??
-                        ""
-                      }
-                      readOnly
-                      placeholder="Principal otomatis berdasarkan brand"
-                      className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none"
-                    />
+                    {selectedCompany?.type ===
+                    "PRINCIPAL" ? (
+                      <input
+                        type="text"
+                        value={
+                          selectedCompany.name
+                        }
+                        readOnly
+                        className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none"
+                      />
+                    ) : principalCandidates.length ===
+                      1 ? (
+                      <input
+                        type="text"
+                        value={
+                          principalCandidates[0]
+                            ?.name ?? ""
+                        }
+                        readOnly
+                        className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none"
+                      />
+                    ) : (
+                      <div className="relative">
+                        <select
+                          value={
+                            principalId
+                          }
+                          onChange={(e) =>
+                            setPrincipalId(
+                              e.target.value
+                            )
+                          }
+                          disabled={
+                            !companyId ||
+                            principalCandidates.length ===
+                              0
+                          }
+                          className="h-11 w-full appearance-none rounded-lg border border-slate-200 bg-white px-4 pr-10 text-sm text-slate-800 outline-none transition focus:border-[#010736] focus:ring-1 focus:ring-[#010736] disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                        >
+                          <option value="">
+                            {!companyId
+                              ? "Pilih company dulu"
+                              : principalCandidates.length ===
+                                0
+                              ? "Principal tidak ditemukan"
+                              : "Pilih principal"}
+                          </option>
+
+                          {principalCandidates.map(
+                            (
+                              principal
+                            ) => (
+                              <option
+                                key={
+                                  principal.id
+                                }
+                                value={
+                                  principal.id
+                                }
+                              >
+                                {
+                                  principal.name
+                                }
+                              </option>
+                            )
+                          )}
+                        </select>
+
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      </div>
+                    )}
+
+                    {selectedCompany?.type ===
+                      "VENDOR" &&
+                      principalCandidates.length >
+                        1 && (
+                        <p className="mt-1.5 text-xs text-slate-400">
+                          Ada{" "}
+                          {
+                            principalCandidates.length
+                          }{" "}
+                          principal untuk
+                          brand ini. Pilih
+                          salah satu.
+                        </p>
+                      )}
+
+                    {selectedCompany?.type ===
+                      "VENDOR" &&
+                      principalCandidates.length ===
+                        1 && (
+                        <p className="mt-1.5 text-xs text-slate-400">
+                          Principal otomatis
+                          karena hanya ada
+                          satu principal
+                          untuk brand ini.
+                        </p>
+                      )}
                   </div>
+
+                  {/* DESCRIPTION */}
 
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -1155,6 +1868,9 @@ export default function ProductSolutionsPage() {
                       className="w-full resize-none rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
                     />
                   </div>
+
+                  {/* SPECIFICATION */}
+
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
                       Specification
@@ -1172,6 +1888,9 @@ export default function ProductSolutionsPage() {
                       className="w-full resize-none rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
                     />
                   </div>
+
+                  {/* PDF */}
+
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">
                       Documents / PDF
@@ -1181,7 +1900,7 @@ export default function ProductSolutionsPage() {
                       htmlFor="product-solution-pdfs"
                       className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition hover:border-[#010736] hover:bg-[#010736]/5"
                     >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border border-slate-200">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white">
                         <FileText className="h-5 w-5 text-[#010736]" />
                       </div>
 
@@ -1245,6 +1964,7 @@ export default function ProductSolutionsPage() {
             </div>
 
             {/* FOOTER */}
+
             <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-5">
               <button
                 type="button"
@@ -1265,7 +1985,12 @@ export default function ProductSolutionsPage() {
                   !productSolutionName.trim() ||
                   !companyId ||
                   !category.trim() ||
-                  !brand.trim()
+                  !brand.trim() ||
+                  (selectedCompany?.type ===
+                    "VENDOR" &&
+                    principalCandidates.length >
+                      1 &&
+                    !principalId)
                 }
                 className="rounded-lg bg-[#010736] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#02094d] disabled:cursor-not-allowed disabled:opacity-40"
               >
@@ -1277,6 +2002,8 @@ export default function ProductSolutionsPage() {
           </div>
         </div>
       )}
+
+      {/* ERROR */}
 
       {error && (
         <div className="fixed bottom-5 right-5 z-[60] max-w-md rounded-xl border border-red-200 bg-white px-4 py-3 text-sm text-red-600 shadow-lg">

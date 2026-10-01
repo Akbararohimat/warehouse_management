@@ -555,11 +555,33 @@ export default function ProductSolutionDetailPage() {
   };
 
   const getFileUrl = (fileUrl: string) => {
+    if (!fileUrl) return "";
+
     if (fileUrl.startsWith("http")) {
       return fileUrl;
     }
 
     return `${API_SERVER_URL}${fileUrl}`;
+  };
+
+  /*
+   * FIX FOTO PRODUCT SOLUTION
+   *
+   * Backend menyimpan imageUrl seperti:
+   * /uploads/products/xxxxx.webp
+   *
+   * Karena frontend jalan di localhost:3000,
+   * path tersebut harus diarahkan ke backend
+   * localhost:5000.
+   */
+  const getImageUrl = (imageUrl: string) => {
+    if (!imageUrl) return "";
+
+    if (imageUrl.startsWith("http")) {
+      return imageUrl;
+    }
+
+    return `${API_SERVER_URL}${imageUrl}`;
   };
 
   if (loading) {
@@ -677,10 +699,13 @@ export default function ProductSolutionDetailPage() {
         <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-5">
+              {/* FIX IMAGE SUMMARY */}
               <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                 {productSolution.image ? (
                   <img
-                    src={productSolution.image}
+                    src={getImageUrl(
+                      productSolution.image
+                    )}
                     alt={productSolution.name}
                     className="h-full w-full object-cover"
                   />
@@ -1079,7 +1104,9 @@ export default function ProductSolutionDetailPage() {
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                 {productSolution.image ? (
                   <img
-                    src={productSolution.image}
+                    src={getImageUrl(
+                      productSolution.image
+                    )}
                     alt={productSolution.name}
                     className="aspect-square w-full object-cover"
                   />

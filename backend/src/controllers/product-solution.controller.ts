@@ -573,6 +573,74 @@ export async function updateProductSolution(
   }
 }
 
+export async function uploadProductSolutionImage(
+  req: Request<ProductSolutionParams>,
+  res: Response
+) {
+  try {
+    const { id } = req.params;
+    const file = req.file as UploadedFile | undefined;
+
+    if (!file) {
+      return res.status(400).json({
+        success: false,
+        message: "File gambar wajib diupload",
+      });
+    }
+
+    const productSolution =
+      await prisma.productSolution.findUnique({
+        where: { id },
+      });
+
+    if (!productSolution) {
+      return res.status(404).json({
+        success: false,
+        message: "Product Solution tidak ditemukan",
+      });
+    }
+
+    const imageUrl = `/uploads/products/${file.filename}`;
+
+    const updatedProductSolution =
+      await prisma.productSolution.update({
+        where: { id },
+        data: { imageUrl },
+        include: {
+          company: true,
+          contact: true,
+          principal: true,
+          documents: {
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      });
+
+    const principals = await findPrincipalsByBrand(
+      updatedProductSolution.brand
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Foto Product Solution berhasil diupload",
+      data: {
+        ...updatedProductSolution,
+        principals,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Upload product solution image error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan pada server",
+    });
+  }
+}
+
 export async function uploadProductSolutionDocuments(
   req: Request<ProductSolutionParams>,
   res: Response
