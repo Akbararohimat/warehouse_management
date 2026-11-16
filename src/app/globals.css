@@ -247,3 +247,13 @@ body {
 .animate-login-description {
   animation: loginDescription 0.7s ease-out 0.5s both;
 }
+html,
+body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}

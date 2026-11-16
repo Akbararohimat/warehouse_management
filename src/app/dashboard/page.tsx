@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-
 import {
   LayoutDashboard,
   Users,
@@ -16,9 +15,13 @@ import {
   ChevronDown,
   Sun,
   Moon,
-  BarChart3,
   Layers3,
-  RefreshCw,
+  Search,
+  Bell,
+  Plus,
+  ArrowRight,
+  Box,
+  X,
 } from "lucide-react";
 
 import { useTheme } from "@/components/ThemeProvider";
@@ -35,23 +38,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-} from "recharts";
-
-import {
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
 
 const API_BASE_URL = "http://localhost:5000/api";
 
@@ -116,599 +102,213 @@ type ProductSolution = {
   companyId?: string | null;
 };
 
-type ChartCardProps = {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  onViewAll?: () => void;
-  delay?: number;
+type NavItem = {
+  label: string;
+  href: string;
+  icon: React.ElementType;
 };
 
-const CHART_COLORS = {
-  navy: "#010736",
-  yellow: "#facc15",
-};
+const navigation: NavItem[] = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Contact List",
+    href: "/contact-list",
+    icon: Users,
+  },
+  {
+    label: "Product Item",
+    href: "/products",
+    icon: Package,
+  },
+  {
+    label: "Vendor / Principal",
+    href: "/principal",
+    icon: Building2,
+  },
+  {
+    label: "Product Solution",
+    href: "/product-solution",
+    icon: Layers3,
+  },
+];
 
-function ChartCard({
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+}
+
+function getDivisionName(division: string) {
+  if (division === "RND") return "RnD Division";
+  if (division === "SALES") return "Sales Division";
+  if (division === "ADMIN") return "Admin Division";
+
+  return division;
+}
+
+function SectionHeader({
   title,
   description,
-  icon,
-  children,
-  onViewAll,
-  delay = 0,
-}: ChartCardProps) {
-  return (
-    <motion.div
-      initial={{
-        opacity: 0,
-        y: 14,
-      }}
-      animate={{
-        opacity: 1,
-        y: 0,
-      }}
-      whileHover={{
-        y: -2,
-        transition: {
-          duration: 0.18,
-          ease: "easeOut",
-        },
-      }}
-      transition={{
-        duration: 0.35,
-        delay,
-        ease: "easeOut",
-      }}
-      className="rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white via-white to-slate-50 shadow-sm dark:border-white/10 dark:from-[#111526] dark:via-[#111526] dark:to-[#0D1020]"
-    >
-      <div className="flex items-center justify-between border-b border-slate-200/70 px-6 py-5 dark:border-white/10">
-        <div className="flex items-center gap-3">
-          <motion.div
-            whileHover={{
-              scale: 1.05,
-              rotate: 2,
-            }}
-            transition={{
-              duration: 0.15,
-            }}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#010736]/10 text-[#010736] dark:bg-white/10 dark:text-white"
-          >
-            {icon}
-          </motion.div>
-
-          <div>
-            <h2 className="font-bold text-black dark:text-white">
-              {title}
-            </h2>
-
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {description}
-            </p>
-          </div>
-        </div>
-
-        {onViewAll && (
-          <motion.button
-            type="button"
-            onClick={onViewAll}
-            whileHover={{
-              x: 2,
-            }}
-            whileTap={{
-              scale: 0.97,
-            }}
-            transition={{
-              duration: 0.15,
-            }}
-            className="text-sm font-medium text-[#010736] transition-colors hover:text-yellow-500 dark:text-white"
-          >
-            Lihat Semua →
-          </motion.button>
-        )}
-      </div>
-
-      <div className="p-6">{children}</div>
-    </motion.div>
-  );
-}
-
-function EmptyChart({
-  icon,
-  text,
+  href,
 }: {
-  icon: React.ReactNode;
-  text: string;
+  title: string;
+  description: string;
+  href: string;
 }) {
   return (
-    <motion.div
-      initial={{
-        opacity: 0,
-        scale: 0.97,
-      }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-      }}
-      transition={{
-        duration: 0.3,
-      }}
-      className="flex h-[300px] flex-col items-center justify-center text-center"
-    >
-      <motion.div
-        initial={{
-          opacity: 0,
-          y: 5,
-        }}
-        animate={{
-          opacity: 1,
-          y: 0,
-        }}
-        transition={{
-          duration: 0.3,
-          delay: 0.05,
-        }}
-        className="text-gray-300 dark:text-gray-600"
-      >
-        {icon}
-      </motion.div>
+    <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+      <div>
+        <h2 className="text-sm font-bold text-[#172B4D]">
+          {title}
+        </h2>
 
-      <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-        {text}
-      </p>
-    </motion.div>
+        <p className="mt-1 text-xs text-slate-400">
+          {description}
+        </p>
+      </div>
+
+      <Link
+        href={href}
+        className="flex shrink-0 items-center gap-1 text-xs font-medium text-blue-600 transition hover:text-blue-800"
+      >
+        Lihat semua
+        <ArrowRight size={13} />
+      </Link>
+    </div>
   );
 }
 
-function LoadingChart() {
+function StatCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  featured = false,
+  badge,
+}: {
+  title: string;
+  value: number;
+  description: string;
+  icon: React.ElementType;
+  featured?: boolean;
+  badge?: string;
+}) {
   return (
-    <div className="flex h-[300px] items-center justify-center">
-      <div className="flex items-center gap-2 text-sm text-gray-400">
-        <RefreshCw
-          size={16}
-          className="animate-spin"
-        />
-        Loading data...
+    <div
+      className={`flex min-w-0 items-start justify-between rounded-lg border p-4 ${
+        featured
+          ? "border-[#142A49] bg-[#142A49] text-white"
+          : "border-slate-200 bg-white text-[#172B4D]"
+      }`}
+    >
+      <div className="min-w-0">
+        <p
+          className={`text-xs ${
+            featured ? "text-slate-300" : "text-slate-500"
+          }`}
+        >
+          {title}
+        </p>
+
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="text-2xl font-bold leading-none tabular-nums">
+            {value.toLocaleString("id-ID")}
+          </span>
+
+          {badge && (
+            <span className="rounded bg-amber-50 px-2 py-1 text-[9px] font-medium text-amber-700">
+              {badge}
+            </span>
+          )}
+        </div>
+
+        <p
+          className={`mt-3 text-[10px] ${
+            featured ? "text-slate-300" : "text-slate-400"
+          }`}
+        >
+          {description}
+        </p>
+      </div>
+
+      <div
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+          featured
+            ? "bg-white/10 text-white"
+            : "bg-blue-50 text-blue-600"
+        }`}
+      >
+        <Icon size={17} />
       </div>
     </div>
   );
 }
 
-function SideTooltip({
-  ...props
-}: React.ComponentProps<typeof ChartTooltipContent>) {
-  return <ChartTooltipContent {...props} />;
-}
-
-function ContactChart({
-  data,
+function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  buttonLabel,
+  href,
 }: {
-  data: { label: string; value: number }[];
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  buttonLabel: string;
+  href: string;
 }) {
-  const chartConfig = {
-    value: {
-      label: "Contact",
-      color: CHART_COLORS.navy,
-    },
-  } satisfies ChartConfig;
-
   return (
-    <ChartContainer
-      config={chartConfig}
-      className="h-[300px] w-full"
-    >
-      <BarChart
-        accessibilityLayer
-        data={data.slice(0, 12)}
-        margin={{
-          top: 25,
-          right: 55,
-          left: 0,
-          bottom: 5,
-        }}
-        barCategoryGap="25%"
+    <div className="flex min-h-[215px] flex-col items-center justify-center px-5 py-7 text-center">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+        <Icon size={22} />
+      </div>
+
+      <h3 className="mt-4 text-sm font-semibold text-[#172B4D]">
+        {title}
+      </h3>
+
+      <p className="mt-2 max-w-[270px] text-xs leading-5 text-slate-400">
+        {description}
+      </p>
+
+      <Link
+        href={href}
+        className="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-700"
       >
-        <CartesianGrid vertical={false} />
-
-        <XAxis
-          dataKey="label"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-          tickFormatter={(value) =>
-            String(value).length > 10
-              ? `${String(value).slice(0, 10)}…`
-              : String(value)
-          }
-        />
-
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          width={35}
-          allowDecimals={false}
-        />
-
-        <ChartTooltip
-          cursor={false}
-          offset={12}
-          allowEscapeViewBox={{
-            x: true,
-            y: true,
-          }}
-          wrapperStyle={{
-            zIndex: 50,
-            transform: "translateX(65px)",
-          }}
-          content={
-            <SideTooltip indicator="dot" />
-          }
-        />
-
-        <Bar
-          dataKey="value"
-          fill="var(--color-value)"
-          radius={[5, 5, 0, 0]}
-          maxBarSize={42}
-          animationBegin={100}
-          animationDuration={800}
-          animationEasing="ease-out"
-        />
-      </BarChart>
-    </ChartContainer>
-  );
-}
-
-function ProductChart({
-  active,
-  inactive,
-}: {
-  active: number;
-  inactive: number;
-}) {
-  const chartConfig = {
-    active: {
-      label: "Active",
-      color: CHART_COLORS.navy,
-    },
-    inactive: {
-      label: "Inactive",
-      color: CHART_COLORS.yellow,
-    },
-  } satisfies ChartConfig;
-
-  const data = [
-    {
-      label: "Products",
-      active,
-      inactive,
-    },
-  ];
-
-  return (
-    <ChartContainer
-      config={chartConfig}
-      className="h-[300px] w-full"
-    >
-      <BarChart
-        accessibilityLayer
-        data={data}
-        margin={{
-          top: 25,
-          right: 55,
-          left: 0,
-          bottom: 5,
-        }}
-        barCategoryGap="35%"
-      >
-        <CartesianGrid vertical={false} />
-
-        <XAxis
-          dataKey="label"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-        />
-
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          width={35}
-          allowDecimals={false}
-        />
-
-        <ChartTooltip
-          cursor={false}
-          offset={12}
-          allowEscapeViewBox={{
-            x: true,
-            y: true,
-          }}
-          wrapperStyle={{
-            zIndex: 50,
-            transform: "translateX(65px)",
-          }}
-          content={<SideTooltip />}
-        />
-
-        <ChartLegend
-          content={<ChartLegendContent />}
-        />
-
-        <Bar
-          dataKey="active"
-          stackId="products"
-          fill="var(--color-active)"
-          radius={[0, 0, 4, 4]}
-          maxBarSize={90}
-          animationBegin={100}
-          animationDuration={800}
-          animationEasing="ease-out"
-        />
-
-        <Bar
-          dataKey="inactive"
-          stackId="products"
-          fill="var(--color-inactive)"
-          radius={[4, 4, 0, 0]}
-          maxBarSize={90}
-          animationBegin={180}
-          animationDuration={800}
-          animationEasing="ease-out"
-        />
-      </BarChart>
-    </ChartContainer>
-  );
-}
-
-function CompanyChart({
-  data,
-}: {
-  data: {
-    label: string;
-    products: number;
-    principals: number;
-    productsVisual: number;
-    principalsVisual: number;
-  }[];
-}) {
-  const chartConfig = {
-    productsVisual: {
-      label: "Product",
-      color: CHART_COLORS.navy,
-    },
-    principalsVisual: {
-      label: "Principal",
-      color: CHART_COLORS.yellow,
-    },
-  } satisfies ChartConfig;
-
-  return (
-    <ChartContainer
-      config={chartConfig}
-      className="h-[300px] w-full"
-    >
-      <BarChart
-        accessibilityLayer
-        data={data.slice(0, 10)}
-        margin={{
-          top: 25,
-          right: 55,
-          left: 0,
-          bottom: 5,
-        }}
-        barCategoryGap="25%"
-        barGap={5}
-      >
-        <CartesianGrid vertical={false} />
-
-        <XAxis
-          dataKey="label"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-          tickFormatter={(value) =>
-            String(value).length > 9
-              ? `${String(value).slice(0, 9)}…`
-              : String(value)
-          }
-        />
-
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          width={35}
-          allowDecimals={false}
-        />
-
-        <ChartTooltip
-          cursor={false}
-          offset={12}
-          allowEscapeViewBox={{
-            x: true,
-            y: true,
-          }}
-          wrapperStyle={{
-            zIndex: 50,
-            transform: "translateX(65px)",
-          }}
-          content={
-            <SideTooltip
-              formatter={(value, name, item) => {
-                const payload = item.payload as {
-                  products?: number;
-                  principals?: number;
-                };
-
-                const actualValue =
-                  name === "productsVisual"
-                    ? payload.products ?? 0
-                    : payload.principals ?? 0;
-
-                const label =
-                  name === "productsVisual"
-                    ? "Product"
-                    : "Principal";
-
-                return (
-                  <div className="flex flex-1 justify-between gap-4 leading-none">
-                    <span className="text-muted-foreground">
-                      {label}
-                    </span>
-
-                    <span className="font-mono font-medium text-foreground tabular-nums">
-                      {actualValue.toLocaleString(
-                        "id-ID"
-                      )}
-                    </span>
-                  </div>
-                );
-              }}
-            />
-          }
-        />
-
-        <ChartLegend
-          content={<ChartLegendContent />}
-        />
-
-        <Bar
-          dataKey="productsVisual"
-          fill="var(--color-productsVisual)"
-          radius={[4, 4, 0, 0]}
-          maxBarSize={32}
-          animationBegin={100}
-          animationDuration={800}
-          animationEasing="ease-out"
-        />
-
-        <Bar
-          dataKey="principalsVisual"
-          fill="var(--color-principalsVisual)"
-          radius={[4, 4, 0, 0]}
-          maxBarSize={32}
-          animationBegin={180}
-          animationDuration={800}
-          animationEasing="ease-out"
-        />
-      </BarChart>
-    </ChartContainer>
-  );
-}
-
-function ProductSolutionChart({
-  data,
-}: {
-  data: { label: string; value: number }[];
-}) {
-  const chartConfig = {
-    value: {
-      label: "Product Solution",
-      color: CHART_COLORS.navy,
-    },
-  } satisfies ChartConfig;
-
-  return (
-    <ChartContainer
-      config={chartConfig}
-      className="h-[300px] w-full"
-    >
-      <BarChart
-        accessibilityLayer
-        data={data.slice(0, 12)}
-        margin={{
-          top: 25,
-          right: 55,
-          left: 0,
-          bottom: 5,
-        }}
-        barCategoryGap="25%"
-      >
-        <CartesianGrid vertical={false} />
-
-        <XAxis
-          dataKey="label"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-          tickFormatter={(value) =>
-            String(value).length > 10
-              ? `${String(value).slice(0, 10)}…`
-              : String(value)
-          }
-        />
-
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          width={35}
-          allowDecimals={false}
-        />
-
-        <ChartTooltip
-          cursor={false}
-          offset={12}
-          allowEscapeViewBox={{
-            x: true,
-            y: true,
-          }}
-          wrapperStyle={{
-            zIndex: 50,
-            transform: "translateX(65px)",
-          }}
-          content={
-            <SideTooltip indicator="dot" />
-          }
-        />
-
-        <Bar
-          dataKey="value"
-          fill="var(--color-value)"
-          radius={[5, 5, 0, 0]}
-          maxBarSize={42}
-          animationBegin={100}
-          animationDuration={800}
-          animationEasing="ease-out"
-        />
-      </BarChart>
-    </ChartContainer>
+        <Plus size={14} />
+        {buttonLabel}
+      </Link>
+    </div>
   );
 }
 
 export default function Dashboard() {
   const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
 
-  const [user, setUser] =
-    useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
-  const [contacts, setContacts] =
-    useState<Contact[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [productSolutions, setProductSolutions] = useState<ProductSolution[]>([]);
 
-  const [products, setProducts] =
-    useState<Product[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingCompanies, setLoadingCompanies] = useState(true);
+  const [loadingSolutions, setLoadingSolutions] = useState(true);
 
-  const [companies, setCompanies] =
-    useState<Company[]>([]);
+  const [search, setSearch] = useState("");
 
-  const [productSolutions, setProductSolutions] =
-    useState<ProductSolution[]>([]);
-
-  const [loadingContacts, setLoadingContacts] =
-    useState(true);
-
-  const [loadingProducts, setLoadingProducts] =
-    useState(true);
-
-  const [loadingCompanies, setLoadingCompanies] =
-    useState(true);
-
-  const [
-    loadingProductSolutions,
-    setLoadingProductSolutions,
-  ] = useState(true);
-
-  const { theme, toggleTheme } =
-    useTheme();
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     const token =
@@ -722,29 +322,18 @@ export default function Dashboard() {
 
     async function fetchUser() {
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/users/me`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await fetch(`${API_BASE_URL}/users/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         const data = await response.json();
 
         if (!response.ok) {
-          localStorage.removeItem(
-            "authToken"
-          );
-
+          localStorage.removeItem("authToken");
           localStorage.removeItem("user");
-
-          sessionStorage.removeItem(
-            "authToken"
-          );
-
+          sessionStorage.removeItem("authToken");
           sessionStorage.removeItem("user");
 
           router.replace("/");
@@ -753,160 +342,40 @@ export default function Dashboard() {
 
         setUser(data.user);
       } catch (error) {
-        console.error(
-          "Get user error:",
-          error
-        );
+        console.error("Get user error:", error);
       }
     }
 
-    async function fetchContacts() {
+    async function fetchData(
+      endpoint: string,
+      setter: (data: any[]) => void,
+      setLoading: (loading: boolean) => void
+    ) {
       try {
-        setLoadingContacts(true);
+        setLoading(true);
 
-        const response = await fetch(
-          `${API_BASE_URL}/contacts`
-        );
-
+        const response = await fetch(`${API_BASE_URL}/${endpoint}`);
         const result = await response.json();
 
         if (!response.ok || !result.success) {
           return;
         }
 
-        const data = Array.isArray(result.data)
-          ? result.data
-          : [];
-
-        setContacts(data);
+        setter(Array.isArray(result.data) ? result.data : []);
       } catch (error) {
-        console.error(
-          "Get contacts error:",
-          error
-        );
+        console.error(`Get ${endpoint} error:`, error);
       } finally {
-        setLoadingContacts(false);
-      }
-    }
-
-    async function fetchProducts() {
-      try {
-        setLoadingProducts(true);
-
-        const response = await fetch(
-          `${API_BASE_URL}/products`
-        );
-
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-          return;
-        }
-
-        const data = Array.isArray(result.data)
-          ? result.data
-          : [];
-
-        setProducts(data);
-      } catch (error) {
-        console.error(
-          "Get products error:",
-          error
-        );
-      } finally {
-        setLoadingProducts(false);
-      }
-    }
-
-    async function fetchCompanies() {
-      try {
-        setLoadingCompanies(true);
-
-        const response = await fetch(
-          `${API_BASE_URL}/companies`
-        );
-
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-          return;
-        }
-
-        const data = Array.isArray(result.data)
-          ? result.data
-          : [];
-
-        setCompanies(data);
-      } catch (error) {
-        console.error(
-          "Get companies error:",
-          error
-        );
-      } finally {
-        setLoadingCompanies(false);
-      }
-    }
-
-    async function fetchProductSolutions() {
-      try {
-        setLoadingProductSolutions(true);
-
-        const response = await fetch(
-          `${API_BASE_URL}/product-solutions`
-        );
-
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-          return;
-        }
-
-        const data = Array.isArray(result.data)
-          ? result.data
-          : [];
-
-        setProductSolutions(data);
-      } catch (error) {
-        console.error(
-          "Get product solutions error:",
-          error
-        );
-      } finally {
-        setLoadingProductSolutions(false);
+        setLoading(false);
       }
     }
 
     fetchUser();
-    fetchContacts();
-    fetchProducts();
-    fetchCompanies();
-    fetchProductSolutions();
+
+    fetchData("contacts", setContacts, setLoadingContacts);
+    fetchData("products", setProducts, setLoadingProducts);
+    fetchData("companies", setCompanies, setLoadingCompanies);
+    fetchData("product-solutions", setProductSolutions, setLoadingSolutions);
   }, [router]);
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase();
-  };
-
-  const getDivisionName = (
-    division: string
-  ) => {
-    if (division === "RND")
-      return "RnD Division";
-
-    if (division === "SALES")
-      return "Sales Division";
-
-    if (division === "ADMIN")
-      return "Admin Division";
-
-    return division;
-  };
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
@@ -922,690 +391,838 @@ export default function Dashboard() {
     const map = new Map<string, number>();
 
     contacts.forEach((contact) => {
-      const companyName =
+      const name =
         contact.company?.name ||
-        (contact.companyId
-          ? "Perusahaan"
-          : "Tanpa Perusahaan");
+        (contact.companyId ? "Perusahaan" : "Tanpa Perusahaan");
 
-      map.set(
-        companyName,
-        (map.get(companyName) || 0) + 1
-      );
+      map.set(name, (map.get(name) || 0) + 1);
     });
 
     return Array.from(map.entries())
-      .map(([label, value]) => ({
-        label,
-        value,
-      }))
+      .map(([label, value]) => ({ label, value }))
       .sort((a, b) => b.value - a.value);
   }, [contacts]);
 
-  const productChartData = useMemo(() => {
+  const productStatus = useMemo(() => {
     const active = products.filter(
       (product) =>
-        String(product.status).toUpperCase() ===
-        "ACTIVE"
+        String(product.status).toUpperCase() === "ACTIVE"
     ).length;
 
     const inactive = products.filter(
       (product) =>
-        String(product.status).toUpperCase() ===
-        "INACTIVE"
+        String(product.status).toUpperCase() === "INACTIVE"
     ).length;
 
     return {
       active,
       inactive,
+      total: products.length,
     };
   }, [products]);
 
-  const getScaleDivisor = (
-    value: number
-  ) => {
-    if (value <= 100) return 1;
-
-    const exponent = Math.max(
-      1,
-      Math.ceil(
-        Math.log10(value / 100)
-      )
-    );
-
-    return Math.pow(10, exponent);
-  };
-
-  const companyChartData = useMemo(() => {
-    const baseData = [...companies]
-      .map((company) => ({
-        label: company.name,
-        products: Number(
-          company.productCount || 0
-        ),
-        principals: Number(
-          company.principalCount || 0
-        ),
-      }))
+  const companyTableData = useMemo(() => {
+    return [...companies]
       .sort(
         (a, b) =>
-          b.products - a.products
-      );
-
-    const maxProducts = Math.max(
-      ...baseData.map(
-        (item) => item.products
-      ),
-      0
-    );
-
-    const maxPrincipals = Math.max(
-      ...baseData.map(
-        (item) => item.principals
-      ),
-      0
-    );
-
-    const productDivisor =
-      getScaleDivisor(maxProducts);
-
-    const principalDivisor =
-      getScaleDivisor(maxPrincipals);
-
-    return baseData.map((item) => ({
-      ...item,
-      productsVisual:
-        item.products / productDivisor,
-      principalsVisual:
-        item.principals / principalDivisor,
-    }));
+          (b.principalCount || 0) +
+          (b.productCount || 0) -
+          ((a.principalCount || 0) + (a.productCount || 0))
+      )
+      .slice(0, 5);
   }, [companies]);
 
-  const productSolutionChartData =
-    useMemo(() => {
-      const map = new Map<string, number>();
+  const totalPrincipals = useMemo(
+    () =>
+      companies.filter(
+        (company) => company.type === "PRINCIPAL"
+      ).length,
+    [companies]
+  );
 
-      productSolutions.forEach(
-        (solution) => {
-          const category =
-            solution.category?.trim() ||
-            "Tanpa Category";
+  const totalVendors = useMemo(
+    () =>
+      companies.filter(
+        (company) => company.type === "VENDOR"
+      ).length,
+    [companies]
+  );
 
-          map.set(
-            category,
-            (map.get(category) || 0) + 1
-          );
-        }
-      );
+  const searchResults = useMemo(() => {
+    const query = search.trim().toLowerCase();
 
-      return Array.from(map.entries())
-        .map(([label, value]) => ({
-          label,
-          value,
-        }))
-        .sort(
-          (a, b) => b.value - a.value
-        );
-    }, [productSolutions]);
+    if (!query) return [];
+
+    const results = [
+      ...contacts.map((item) => ({
+        name: item.name,
+        subtitle: item.company?.name || "Contact",
+        href: "/contact-list",
+      })),
+      ...products.map((item) => ({
+        name: item.name,
+        subtitle: item.code,
+        href: "/products",
+      })),
+      ...companies.map((item) => ({
+        name: item.name,
+        subtitle: item.type,
+        href: "/principal",
+      })),
+      ...productSolutions.map((item) => ({
+        name: item.name,
+        subtitle: item.code,
+        href: "/product-solution",
+      })),
+    ];
+
+    return results
+      .filter(
+        (item) =>
+          item.name.toLowerCase().includes(query) ||
+          item.subtitle.toLowerCase().includes(query)
+      )
+      .slice(0, 6);
+  }, [search, contacts, products, companies, productSolutions]);
+
+  // Donut chart animation values
+  const donutCircumference = 2 * Math.PI * 54;
+
+  const activePercentage =
+    productStatus.total > 0
+      ? (productStatus.active / productStatus.total) * 100
+      : 0;
+
+  const activeDashOffset =
+    donutCircumference -
+    (activePercentage / 100) * donutCircumference;
+
+  // Contact chart maximum value
+  const maxContactValue = Math.max(
+    ...contactChartData.map((item) => item.value),
+    1
+  );
 
   return (
-    <main className="flex min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-100 dark:from-[#080B1A] dark:via-[#0D1020] dark:to-[#080B1A]">
-      <aside className="flex w-68 shrink-0 flex-col bg-[#010736] px-5 py-6 text-white">
-        <motion.div
-          initial={{
-            opacity: 0,
-            x: -10,
-          }}
-          animate={{
-            opacity: 1,
-            x: 0,
-          }}
-          transition={{
-            duration: 0.3,
-          }}
-          className="mb-8 flex items-center gap-3"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5">
-            <img
-              src="/OIP.webp"
-              alt="Logo"
-              className="h-full w-full object-contain"
-            />
+    <main className="flex min-h-screen bg-[#F3F6FB] text-[#172B4D]">
+      {/* SIDEBAR */}
+      <aside className="sticky top-0 flex h-screen w-[250px] shrink-0 flex-col bg-[#0E1D38] text-white">
+        {/* BRANDING */}
+        <div className="px-5 pb-7 pt-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white p-1.5">
+              <img
+                src="/OIP.webp"
+                alt="Comtronics Logo"
+                className="h-full w-full object-contain"
+              />
+            </div>
+
+            <div className="min-w-0">
+              <h2 className="whitespace-nowrap text-[16px] font-bold tracking-tight">
+                Dashboard RnD
+              </h2>
+
+              <p className="mt-1 text-[8px] font-medium tracking-[0.22em] text-slate-400">
+                MANAGEMENT PORTAL
+              </p>
+            </div>
           </div>
 
-          <h2 className="text-xl font-bold">
-            Dashboard RnD
-          </h2>
-        </motion.div>
+          <div className="mt-4 flex items-center gap-1">
+            <span className="h-[3px] w-3 rounded-full bg-blue-500" />
+            <span className="h-[3px] w-3 rounded-full bg-yellow-400" />
+            <span className="h-[3px] w-3 rounded-full bg-rose-400" />
+          </div>
+        </div>
 
-        <p className="mb-3 px-1 text-sm font-semibold text-white/60">
-          Menu
-        </p>
+        {/* NAVIGATION */}
+        <div className="px-3">
+          <p className="mb-3 px-2 text-[9px] font-semibold tracking-[0.18em] text-slate-500">
+            WORKSPACE
+          </p>
 
-        <Link
-          href="/dashboard"
-          className="relative flex items-center gap-3 px-4 py-3 text-sm font-medium text-white transition"
-        >
-          <span className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 bg-yellow-400" />
+          <nav className="space-y-1">
+            {navigation.map((item, index) => {
+              const Icon = item.icon;
+              const active = index === 0;
 
-          <LayoutDashboard size={19} />
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`group relative flex items-center gap-3 rounded-md px-3 py-3 text-xs transition ${
+                    active
+                      ? "bg-[#203B61] font-semibold text-white"
+                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  {active && (
+                    <span className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r-full bg-yellow-400" />
+                  )}
 
-          <span>Dashboard</span>
-        </Link>
+                  <Icon size={17} />
 
-        <Link
-          href="/contact-list"
-          className="relative mt-1 flex items-center gap-3 px-4 py-3 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
-        >
-          <Users size={19} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
-          <span>Contact List</span>
-        </Link>
+        {/* SIDEBAR INFORMATION */}
+        <div className="mx-5 mt-6 border-t border-white/10" />
 
-        <Link
-          href="/products"
-          className="relative mt-1 flex items-center gap-3 px-4 py-3 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
-        >
-          <Package size={18} />
+        <div className="px-5 pt-5">
+          <p className="text-[10px] font-medium text-slate-300">
+            Data yang terhubung.
+          </p>
 
-          <span>Product Item</span>
-        </Link>
+          <p className="mt-1 text-[9px] leading-4 text-slate-500">
+            Keputusan yang lebih baik.
+          </p>
+        </div>
 
-        <Link
-          href="/principal"
-          className="relative mt-1 flex items-center gap-3 px-4 py-3 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
-        >
-          <Building2 size={18} />
+        <div className="mt-auto px-2 pb-5">
+          <div className="mb-4 rounded-lg bg-[#192E4C] p-3">
+            <p className="text-[10px] font-semibold text-white">
+              Satu portal, semua data.
+            </p>
 
-          <span>Vendor/Principal</span>
-        </Link>
+            <p className="mt-1 text-[9px] leading-4 text-slate-400">
+              Kelola relasi dan katalog produk dalam satu tempat.
+            </p>
+          </div>
 
-        <Link
-          href="/product-solution"
-          className="relative mt-1 flex items-center gap-3 px-4 py-3 text-sm text-white/75 transition hover:bg-white/10 hover:text-white"
-        >
-          <Package size={18} />
-
-          <span>Product Solution</span>
-        </Link>
-
-        <div className="mt-6 border-t border-white/10 pt-5" />
-
-        <div className="mt-auto">
-          <DropdownMenu>
-            <DropdownMenuTrigger className="w-full rounded-xl outline-none">
-              <motion.div
-                whileHover={{
-                  backgroundColor:
-                    "rgba(255,255,255,0.08)",
-                }}
-                transition={{
-                  duration: 0.15,
-                }}
-                className="flex w-full items-center gap-3 rounded-xl p-2 text-left"
-              >
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-white text-[#010736]">
-                    {user
-                      ? getInitials(
-                          user.name
-                        )
-                      : "AA"}
+          <div className="border-t border-white/10 pt-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-md p-2 text-left outline-none transition hover:bg-white/5">
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-white text-xs font-bold text-[#0E1D38]">
+                    {user ? getInitials(user.name) : "AA"}
                   </AvatarFallback>
                 </Avatar>
 
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">
-                    {user?.name ||
-                      "Loading..."}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-semibold text-white">
+                    {user?.name || "Loading..."}
                   </p>
 
-                  <p className="text-xs text-white/60">
+                  <p className="mt-1 text-[10px] text-slate-400">
                     {user
-                      ? getDivisionName(
-                          user.division
-                        )
+                      ? getDivisionName(user.division)
                       : "Loading..."}
                   </p>
                 </div>
 
-                <ChevronDown
-                  size={18}
-                  className="text-white/70"
-                />
-              </motion.div>
-            </DropdownMenuTrigger>
+                <ChevronDown size={15} className="text-slate-400" />
+              </DropdownMenuTrigger>
 
-            <DropdownMenuContent
-              align="end"
-              side="top"
-              className="mb-2 w-52"
-            >
-              {user?.role === "ADMIN" && (
+              <DropdownMenuContent align="end" side="top" className="mb-2 w-52">
+                {user?.role === "ADMIN" && (
+                  <DropdownMenuItem
+                    onClick={() => router.push("/user-management")}
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    User Management
+                  </DropdownMenuItem>
+                )}
+
                 <DropdownMenuItem
-                  onClick={() =>
-                    router.push(
-                      "/user-management"
-                    )
-                  }
+                  onClick={() => router.push("/edit-profile")}
                 >
-                  <Users className="mr-2 h-4 w-4" />
-                  User Management
+                  <UserRound className="mr-2 h-4 w-4" />
+                  Edit Profile
                 </DropdownMenuItem>
-              )}
 
-              <DropdownMenuItem
-                onClick={() =>
-                  router.push(
-                    "/edit-profile"
-                  )
-                }
-              >
-                <UserRound className="mr-2 h-4 w-4" />
-                Edit Profile
-              </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => router.push("/settings")}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
 
-              <DropdownMenuItem
-                onClick={() =>
-                  router.push("/settings")
-                }
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
+                <DropdownMenuSeparator />
 
-              <DropdownMenuSeparator />
-
-              <DropdownMenuItem
-                onClick={handleLogout}
-                className="text-red-600"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-600"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </aside>
 
-      <section className="flex-1">
-        <header className="flex h-20 items-center justify-between border-b border-slate-200/70 bg-gradient-to-r from-white via-white to-slate-50 px-8 dark:border-white/10 dark:from-[#0D1020] dark:via-[#0D1020] dark:to-[#111526]">
-          <motion.div
-            initial={{
-              opacity: 0,
-              y: -6,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            transition={{
-              duration: 0.3,
-            }}
-          >
-            <h1 className="text-3xl font-bold text-black dark:text-white">
+      {/* MAIN CONTENT */}
+      <section className="min-w-0 flex-1">
+        {/* TOPBAR */}
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-5 border-b border-slate-200 bg-white px-6 lg:px-8">
+          <div className="flex shrink-0 items-center gap-3 text-[11px]">
+            <span className="text-slate-400">Workspace</span>
+            <span className="text-slate-300">/</span>
+            <span className="font-semibold text-[#172B4D]">
               Dashboard
-            </h1>
+            </span>
+          </div>
 
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Welcome to RnD Web Portal
-            </p>
-          </motion.div>
+          <div className="flex items-center gap-4">
+            {/* SEARCH */}
+            <div className="relative hidden w-[255px] md:block lg:w-[320px]">
+              <Search
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
 
-          <motion.button
-            type="button"
-            onClick={toggleTheme}
-            whileHover={{
-              scale: 1.02,
-            }}
-            whileTap={{
-              scale: 0.96,
-            }}
-            transition={{
-              duration: 0.15,
-            }}
-            className="flex h-10 items-center gap-2 rounded-xl border border-slate-200/70 bg-white px-4 text-sm font-medium text-[#010736] shadow-sm transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-          >
-            <motion.span
-              key={theme}
-              initial={{
-                opacity: 0,
-                rotate: -30,
-                scale: 0.8,
-              }}
-              animate={{
-                opacity: 1,
-                rotate: 0,
-                scale: 1,
-              }}
-              transition={{
-                duration: 0.2,
-              }}
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari contact, product, atau vendor..."
+                className="h-9 w-full rounded-md border border-transparent bg-[#F3F6FA] pl-9 pr-9 text-[10px] text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white"
+              />
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                >
+                  <X size={13} />
+                </button>
+              )}
+
+              {search.trim() && (
+                <div className="absolute left-0 right-0 top-11 z-50 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+                  {searchResults.length > 0 ? (
+                    searchResults.map((result, index) => (
+                      <button
+                        key={`${result.href}-${index}`}
+                        type="button"
+                        onClick={() => {
+                          router.push(result.href);
+                          setSearch("");
+                        }}
+                        className="flex w-full flex-col border-b border-slate-100 px-4 py-3 text-left transition last:border-0 hover:bg-slate-50"
+                      >
+                        <span className="text-xs font-medium text-slate-700">
+                          {result.name}
+                        </span>
+                        <span className="mt-1 text-[10px] text-slate-400">
+                          {result.subtitle}
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="px-4 py-4 text-xs text-slate-400">
+                      Data tidak ditemukan.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* THEME */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-[10px] font-medium text-slate-600 transition hover:bg-slate-50"
             >
               {theme === "light" ? (
-                <Sun size={17} />
+                <Sun size={15} />
               ) : (
-                <Moon size={17} />
+                <Moon size={15} />
               )}
-            </motion.span>
 
-            <span>
-              {theme === "light"
-                ? "Light Mode"
-                : "Dark Mode"}
-            </span>
-          </motion.button>
+              <span className="hidden sm:inline">
+                {theme === "light" ? "Light mode" : "Dark mode"}
+              </span>
+            </button>
+
+            {/* NOTIFICATION */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowNotifications((prev) => !prev)}
+                aria-label="Notifications"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100"
+              >
+                <Bell size={17} />
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 top-11 z-50 w-64 rounded-lg border border-slate-200 bg-white p-4 shadow-lg">
+                  <p className="text-xs font-semibold text-[#172B4D]">
+                    Notifications
+                  </p>
+                  <p className="mt-2 text-[11px] text-slate-400">
+                    Belum ada notifikasi.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
-        <motion.div
-          className="p-8"
-          initial={{
-            opacity: 0,
-            y: 12,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            duration: 0.35,
-            ease: "easeOut",
-          }}
-        >
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ChartCard
-              title="Contact List"
-              description="Jumlah contact berdasarkan perusahaan"
-              icon={<Users size={19} />}
-              delay={0.05}
-              onViewAll={() =>
-                router.push(
-                  "/contact-list"
-                )
-              }
-            >
-              {loadingContacts ? (
-                <LoadingChart />
-              ) : contactChartData.length ===
-                0 ? (
-                <EmptyChart
-                  icon={<Users size={32} />}
-                  text="Belum ada contact"
-                />
-              ) : (
-                <ContactChart
-                  data={contactChartData}
-                />
-              )}
-            </ChartCard>
+        {/* DASHBOARD BODY */}
+        <div className="mx-auto w-full max-w-[1600px] p-5 lg:p-6 xl:p-8">
+          {/* PAGE TITLE */}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-[#172B4D]">
+                Dashboard
+              </h1>
 
-            <ChartCard
-              title="Products Item"
-              description="Perbandingan status product"
-              icon={<Package size={19} />}
-              delay={0.1}
-              onViewAll={() =>
-                router.push("/products")
-              }
-            >
-              {loadingProducts ? (
-                <LoadingChart />
-              ) : products.length === 0 ? (
-                <EmptyChart
-                  icon={<Package size={32} />}
-                  text="Belum ada product"
-                />
-              ) : (
-                <ProductChart
-                  active={
-                    productChartData.active
-                  }
-                  inactive={
-                    productChartData.inactive
-                  }
-                />
-              )}
-            </ChartCard>
+              <p className="mt-1 text-xs text-slate-500">
+                Selamat datang di RnD Web Portal. Semua data penting, dalam satu tampilan.
+              </p>
+            </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex h-9 items-center gap-2 rounded-md bg-blue-600 px-4 text-xs font-semibold text-white transition hover:bg-blue-700">
+                <Plus size={15} />
+                Tambah data
+                <ChevronDown size={13} />
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => router.push("/contact-list")}>
+                  <Users className="mr-2 h-4 w-4" />
+                  Contact
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onClick={() => router.push("/products")}>
+                  <Package className="mr-2 h-4 w-4" />
+                  Product Item
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onClick={() => router.push("/principal")}>
+                  <Building2 className="mr-2 h-4 w-4" />
+                  Vendor / Principal
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => router.push("/product-solution")}
+                >
+                  <Layers3 className="mr-2 h-4 w-4" />
+                  Product Solution
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <ChartCard
-              title="Vendor / Principal"
-              description="Jumlah product dan Principal yang digunakan"
-              icon={<Building2 size={19} />}
-              delay={0.15}
-              onViewAll={() =>
-                router.push("/principal")
-              }
-            >
-              {loadingCompanies ? (
-                <LoadingChart />
-              ) : companies.length === 0 ? (
-                <EmptyChart
-                  icon={
-                    <Building2 size={32} />
-                  }
-                  text="Belum ada perusahaan"
-                />
-              ) : (
-                <CompanyChart
-                  data={companyChartData}
-                />
-              )}
-            </ChartCard>
+          {/* KPI CARDS */}
+          <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              title="Total Contact"
+              value={contacts.length}
+              description={`Dari ${new Set(
+                contacts
+                  .map((contact) => contact.company?.name)
+                  .filter(Boolean)
+              ).size} perusahaan`}
+              icon={Users}
+              featured
+            />
 
-            <ChartCard
+            <StatCard
+              title="Total Product"
+              value={products.length}
+              description={`${productStatus.active} active · ${productStatus.inactive} inactive`}
+              icon={Box}
+            />
+
+            <StatCard
+              title="Total Company"
+              value={companies.length}
+              description={`${totalVendors} vendor · ${totalPrincipals} principal`}
+              icon={Building2}
+            />
+
+            <StatCard
               title="Product Solution"
-              description="Jumlah Product Solution berdasarkan category"
-              icon={<Layers3 size={19} />}
-              delay={0.2}
-              onViewAll={() =>
-                router.push(
-                  "/product-solution"
-                )
+              value={productSolutions.length}
+              description={
+                productSolutions.length > 0
+                  ? "Solution dalam katalog"
+                  : "Belum ada solution"
               }
-            >
-              {loadingProductSolutions ? (
-                <LoadingChart />
-              ) : productSolutionChartData.length ===
-                0 ? (
-                <EmptyChart
-                  icon={
-                    <Layers3 size={32} />
-                  }
-                  text="Belum ada Product Solution"
+              icon={Layers3}
+              badge={
+                productSolutions.length === 0
+                  ? "Belum tersedia"
+                  : undefined
+              }
+            />
+          </div>
+
+          {/* FIRST ROW */}
+          <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
+            {/* CONTACT LIST */}
+            <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+              <SectionHeader
+                title="Contact List"
+                description="Jumlah contact berdasarkan perusahaan"
+                href="/contact-list"
+              />
+
+              <div className="px-5 py-3">
+                <div className="mb-2 grid grid-cols-[90px_1fr_45px] items-center gap-4 text-[8px] font-semibold tracking-wider text-slate-400 sm:grid-cols-[90px_1fr_45px]">
+                  <span>PERUSAHAAN</span>
+                  <span />
+                  <span className="text-center">CONTACT</span>
+                </div>
+
+                {loadingContacts ? (
+                  <div className="flex h-[165px] items-center justify-center text-xs text-slate-400">
+                    Loading contact data...
+                  </div>
+                ) : contactChartData.length === 0 ? (
+                  <div className="flex h-[165px] items-center justify-center text-xs text-slate-400">
+                    Belum ada contact.
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {contactChartData.slice(0, 4).map((item, index) => {
+                      const percentage =
+                        (item.value / maxContactValue) * 100;
+
+                      return (
+                        <div
+                          key={item.label}
+                          className="grid grid-cols-[90px_1fr_45px] items-center gap-4 border-b border-slate-100 py-3 last:border-0 sm:grid-cols-[90px_1fr_45px]"
+                        >
+                          <span className="truncate text-[10px] font-medium text-[#263B5C]">
+                            {item.label}
+                          </span>
+
+                          <div className="h-[6px] overflow-hidden rounded-full bg-[#EDF2F9]">
+                            <motion.div
+                              className="h-full rounded-full bg-[#4075F5]"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percentage}%` }}
+                              transition={{
+                                duration: 0.9,
+                                delay: index * 0.13,
+                                ease: [0.22, 1, 0.36, 1],
+                              }}
+                            />
+                          </div>
+
+                          <span className="text-center text-[11px] font-semibold tabular-nums text-[#172B4D]">
+                            {item.value}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-[9px] text-slate-400">
+                <span>
+                  {Math.min(contactChartData.length, 4)} contact terbesar
+                </span>
+
+                <span className="font-medium text-slate-500">
+                  Total {contacts.length}
+                </span>
+              </div>
+            </section>
+
+            {/* PRODUCT ITEM */}
+            <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+              <SectionHeader
+                title="Product Item"
+                description="Perbandingan status product"
+                href="/products"
+              />
+
+              <div className="grid min-h-[205px] grid-cols-1 items-center gap-5 px-5 py-5 sm:grid-cols-[145px_1fr]">
+                {loadingProducts ? (
+                  <div className="col-span-full flex h-[165px] items-center justify-center text-xs text-slate-400">
+                    Loading product data...
+                  </div>
+                ) : products.length === 0 ? (
+                  <div className="col-span-full flex h-[165px] items-center justify-center text-xs text-slate-400">
+                    Belum ada product.
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-center">
+                      <div className="relative flex h-[125px] w-[125px] items-center justify-center">
+                        <svg
+                          viewBox="0 0 140 140"
+                          className="h-[125px] w-[125px]"
+                          role="img"
+                          aria-label={`${activePercentage.toFixed(0)}% product active`}
+                        >
+                          <g transform="rotate(-90 70 70)">
+                            {/* Inactive ring */}
+                            <circle
+                              cx="70"
+                              cy="70"
+                              r="54"
+                              fill="none"
+                              stroke="#F16B73"
+                              strokeWidth="13"
+                            />
+
+                            {/* Active ring animation */}
+                            <motion.circle
+                              cx="70"
+                              cy="70"
+                              r="54"
+                              fill="none"
+                              stroke="#3970F6"
+                              strokeWidth="13"
+                              strokeLinecap="butt"
+                              strokeDasharray={donutCircumference}
+                              initial={{
+                                strokeDashoffset: donutCircumference,
+                              }}
+                              animate={{
+                                strokeDashoffset: activeDashOffset,
+                              }}
+                              transition={{
+                                duration: 1.3,
+                                ease: [0.22, 1, 0.36, 1],
+                              }}
+                            />
+                          </g>
+                        </svg>
+
+                        {/* Center content */}
+                        <motion.div
+                          initial={{
+                            opacity: 0,
+                            scale: 0.75,
+                          }}
+                          animate={{
+                            opacity: 1,
+                            scale: 1,
+                          }}
+                          transition={{
+                            duration: 0.5,
+                            delay: 0.25,
+                            ease: "easeOut",
+                          }}
+                          className="absolute flex h-[100px] w-[100px] flex-col items-center justify-center rounded-full bg-white"
+                        >
+                          <span className="text-2xl font-bold text-[#172B4D]">
+                            {products.length}
+                          </span>
+
+                          <span className="mt-1 text-[9px] text-slate-400">
+                            total product
+                          </span>
+                        </motion.div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between border-b border-slate-100 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="h-[7px] w-[7px] rounded-full bg-[#4075F5]" />
+                          <span className="text-xs text-slate-600">
+                            Active
+                          </span>
+                        </div>
+
+                        <span className="text-xs font-semibold text-[#172B4D]">
+                          {productStatus.active}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between border-b border-slate-100 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="h-[7px] w-[7px] rounded-full bg-[#F16B73]" />
+                          <span className="text-xs text-slate-600">
+                            Inactive
+                          </span>
+                        </div>
+
+                        <span className="text-xs font-semibold text-[#172B4D]">
+                          {productStatus.inactive}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-[10px] font-medium text-blue-600">
+                        {Math.round(activePercentage)}% product berstatus active
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="border-t border-slate-100 px-5 py-3 text-[9px] text-slate-400">
+                Status product pada katalog saat ini
+              </div>
+            </section>
+          </div>
+
+          {/* SECOND ROW */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.7fr_1fr]">
+            {/* VENDOR / PRINCIPAL */}
+            <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+              <SectionHeader
+                title="Vendor / Principal"
+                description="Jumlah product dan principal yang digunakan"
+                href="/principal"
+              />
+
+              {loadingCompanies ? (
+                <div className="flex h-[220px] items-center justify-center text-xs text-slate-400">
+                  Loading company data...
+                </div>
+              ) : companies.length === 0 ? (
+                <EmptyState
+                  icon={Building2}
+                  title="Belum ada perusahaan"
+                  description="Tambahkan vendor atau principal untuk mulai membangun katalog."
+                  buttonLabel="Tambah perusahaan"
+                  href="/principal"
                 />
               ) : (
-                <ProductSolutionChart
-                  data={
-                    productSolutionChartData
-                  }
-                />
+                <>
+                  <div className="grid grid-cols-[minmax(0,1fr)_85px_85px_20px] items-center gap-2 bg-[#F7F9FC] px-5 py-3 text-[8px] font-semibold tracking-wider text-slate-400">
+                    <span>PERUSAHAAN</span>
+
+                    <span className="text-center">
+                      <span className="mr-1 inline-block h-[5px] w-[5px] rounded-sm bg-amber-400" />
+                      PRINCIPAL
+                    </span>
+
+                    <span className="text-center">
+                      <span className="mr-1 inline-block h-[5px] w-[5px] rounded-sm bg-blue-500" />
+                      PRODUCT
+                    </span>
+
+                    <span />
+                  </div>
+
+                  <div className="px-5">
+                    {companyTableData.map((company) => (
+                      <Link
+                        key={company.id}
+                        href="/principal"
+                        className="grid grid-cols-[minmax(0,1fr)_85px_85px_20px] items-center gap-2 border-b border-slate-100 py-2.5 transition last:border-0 hover:bg-slate-50"
+                      >
+                        <span className="truncate text-[10px] font-medium text-[#263B5C]">
+                          {company.name}
+                        </span>
+
+                        <span className="mx-auto min-w-[35px] rounded-md bg-amber-50 px-2 py-1 text-center text-[10px] font-semibold text-amber-700">
+                          {company.principalCount || 0}
+                        </span>
+
+                        <span className="mx-auto min-w-[35px] rounded-md bg-blue-50 px-2 py-1 text-center text-[10px] font-semibold text-blue-600">
+                          {company.productCount || 0}
+                        </span>
+
+                        <ChevronDown
+                          size={13}
+                          className="-rotate-90 text-slate-400"
+                        />
+                      </Link>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-[9px] text-slate-400">
+                    <span>
+                      {companies.length} perusahaan
+                    </span>
+
+                    <span className="font-medium text-slate-500">
+                      {totalPrincipals} principal / {products.length} product
+                    </span>
+                  </div>
+                </>
               )}
-            </ChartCard>
+            </section>
+
+            {/* PRODUCT SOLUTION */}
+            <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <h2 className="text-sm font-bold text-[#172B4D]">
+                  Product Solution
+                </h2>
+
+                <p className="mt-1 text-xs text-slate-400">
+                  Solution berdasarkan kategori
+                </p>
+              </div>
+
+              {loadingSolutions ? (
+                <div className="flex h-[270px] items-center justify-center text-xs text-slate-400">
+                  Loading solution data...
+                </div>
+              ) : productSolutions.length === 0 ? (
+                <EmptyState
+                  icon={Layers3}
+                  title="Belum ada Product Solution"
+                  description="Tambahkan solution pertama untuk mengelompokkan product berdasarkan kategori."
+                  buttonLabel="Tambah solution"
+                  href="/product-solution"
+                />
+              ) : (
+                <div className="space-y-3 p-5">
+                  {Array.from(
+                    new Set(
+                      productSolutions.map(
+                        (item) => item.category || "Tanpa kategori"
+                      )
+                    )
+                  ).map((category) => {
+                    const count = productSolutions.filter(
+                      (item) =>
+                        (item.category || "Tanpa kategori") === category
+                    ).length;
+
+                    return (
+                      <div
+                        key={category}
+                        className="flex items-center justify-between rounded-md border border-slate-100 px-3 py-3"
+                      >
+                        <span className="text-xs font-medium text-[#263B5C]">
+                          {category}
+                        </span>
+
+                        <span className="rounded-md bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+                          {count}
+                        </span>
+                      </div>
+                    );
+                  })}
+
+                  <Link
+                    href="/product-solution"
+                    className="flex items-center justify-center gap-2 rounded-md bg-blue-600 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    Lihat Product Solution
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
+              )}
+
+              <div className="border-t border-slate-100 px-5 py-3 text-center text-[9px] text-slate-400">
+                Bangun katalog solution Anda dari sini.
+              </div>
+            </section>
           </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <motion.div
-              initial={{
-                opacity: 0,
-                y: 14,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              transition={{
-                duration: 0.3,
-                delay: 0.25,
-              }}
-              whileHover={{
-                y: -3,
-                transition: {
-                  duration: 0.15,
-                },
-              }}
-              className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#111526]"
-            >
-              <div className="flex items-center gap-3">
-                <motion.div
-                  whileHover={{
-                    scale: 1.05,
-                  }}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#010736]/10 text-[#010736] dark:bg-white/10 dark:text-white"
-                >
-                  <Users size={18} />
-                </motion.div>
 
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Total Contact
-                  </p>
+          {/* FOOTER */}
+          <footer className="mt-5 flex flex-wrap items-center justify-between gap-2 text-[9px] text-slate-400">
+            <span>RnD Web Portal</span>
 
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">
-                    {contacts.length.toLocaleString(
-                      "id-ID"
-                    )}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{
-                opacity: 0,
-                y: 14,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              transition={{
-                duration: 0.3,
-                delay: 0.3,
-              }}
-              whileHover={{
-                y: -3,
-                transition: {
-                  duration: 0.15,
-                },
-              }}
-              className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#111526]"
-            >
-              <div className="flex items-center gap-3">
-                <motion.div
-                  whileHover={{
-                    scale: 1.05,
-                  }}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#010736]/10 text-[#010736] dark:bg-white/10 dark:text-white"
-                >
-                  <Package size={18} />
-                </motion.div>
-
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Total Product
-                  </p>
-
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">
-                    {products.length.toLocaleString(
-                      "id-ID"
-                    )}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{
-                opacity: 0,
-                y: 14,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              transition={{
-                duration: 0.3,
-                delay: 0.35,
-              }}
-              whileHover={{
-                y: -3,
-                transition: {
-                  duration: 0.15,
-                },
-              }}
-              className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#111526]"
-            >
-              <div className="flex items-center gap-3">
-                <motion.div
-                  whileHover={{
-                    scale: 1.05,
-                  }}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#010736]/10 text-[#010736] dark:bg-white/10 dark:text-white"
-                >
-                  <Building2 size={18} />
-                </motion.div>
-
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Total Company
-                  </p>
-
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">
-                    {companies.length.toLocaleString(
-                      "id-ID"
-                    )}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{
-                opacity: 0,
-                y: 14,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              transition={{
-                duration: 0.3,
-                delay: 0.4,
-              }}
-              whileHover={{
-                y: -3,
-                transition: {
-                  duration: 0.15,
-                },
-              }}
-              className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#111526]"
-            >
-              <div className="flex items-center gap-3">
-                <motion.div
-                  whileHover={{
-                    scale: 1.05,
-                  }}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#010736]/10 text-[#010736] dark:bg-white/10 dark:text-white"
-                >
-                  <BarChart3 size={18} />
-                </motion.div>
-
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Product Solution
-                  </p>
-
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">
-                    {productSolutions.length.toLocaleString(
-                      "id-ID"
-                    )}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
+            <span>
+              Contacts, products, vendors &amp; solutions — connected.
+            </span>
+          </footer>
+        </div>
       </section>
     </main>
   );

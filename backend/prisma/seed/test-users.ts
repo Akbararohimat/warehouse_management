@@ -1,5 +1,4 @@
 import "dotenv/config";
-
 import bcrypt from "bcrypt";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../src/generated/prisma/client";
@@ -18,7 +17,6 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({
   adapter,
 });
-
 async function main() {
   const users = [
     {
@@ -45,7 +43,6 @@ async function main() {
     }
 
     const passwordHash = await bcrypt.hash(user.password, 12);
-
     const account = await prisma.user.upsert({
       where: {
         email: user.email,

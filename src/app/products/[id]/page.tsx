@@ -52,34 +52,28 @@ type ApiProduct = {
   brand: string;
   price: string | number;
   status: string;
-
   images?: {
     id: string;
     imageUrl: string;
   }[];
-
   pdfUrl: string | null;
   description: string | null;
   specification: string | null;
   companyId: string;
   contactId: string | null;
   principalId: string | null;
-
   company?: {
     id: string;
     name: string;
   } | null;
-
   contact?: {
     id: string;
     name: string;
   } | null;
-
   principal?: {
     id: string;
     name: string;
   } | null;
-
   principals?: {
     id: string;
     name: string;
@@ -94,56 +88,29 @@ export default function ProductDetailPage() {
     ? params.id[0]
     : params.id;
 
-  const [product, setProduct] =
-    useState<Product | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showImagePreview, setShowImagePreview] = useState(false);
 
-  const [showDeleteModal, setShowDeleteModal] =
-    useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [description, setDescription] = useState("");
 
-  const [showImagePreview, setShowImagePreview] =
-    useState(false);
+  const [editingSpecification, setEditingSpecification] = useState(false);
+  const [specification, setSpecification] = useState("");
 
-  const [editingDescription, setEditingDescription] =
-    useState(false);
+  const [savingDescription, setSavingDescription] = useState(false);
+  const [savingSpecification, setSavingSpecification] = useState(false);
 
-  const [description, setDescription] =
-    useState("");
+  const [editingStatus, setEditingStatus] = useState(false);
+  const [status, setStatus] = useState<"Active" | "Inactive">("Active");
+  const [savingStatus, setSavingStatus] = useState(false);
 
-  const [editingSpecification, setEditingSpecification] =
-    useState(false);
-
-  const [specification, setSpecification] =
-    useState("");
-
-  const [savingDescription, setSavingDescription] =
-    useState(false);
-
-  const [savingSpecification, setSavingSpecification] =
-    useState(false);
-
-  const [editingStatus, setEditingStatus] =
-    useState(false);
-
-  const [status, setStatus] =
-    useState<"Active" | "Inactive">("Active");
-
-  const [savingStatus, setSavingStatus] =
-    useState(false);
-
-  const [deleting, setDeleting] =
-    useState(false);
-
-  const [uploadingPdf, setUploadingPdf] =
-    useState(false);
-
-  const [currentImageIndex, setCurrentImageIndex] =
-    useState(0);
-
-  const [uploadingImages, setUploadingImages] =
-    useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   useEffect(() => {
     if (!productId) return;
@@ -158,89 +125,40 @@ export default function ProductDetailPage() {
 
         const result = await response.json();
 
-        if (
-          !response.ok ||
-          !result.success ||
-          !result.data
-        ) {
+        if (!response.ok || !result.success || !result.data) {
           setProduct(null);
           return;
         }
 
-        const apiProduct: ApiProduct =
-          result.data;
+        const apiProduct: ApiProduct = result.data;
 
         const mappedProduct: Product = {
           id: apiProduct.id,
           code: apiProduct.code,
           name: apiProduct.name,
-
-          vendor:
-            apiProduct.company?.name ??
-            "Belum ada perusahaan",
-
+          vendor: apiProduct.company?.name ?? "Belum ada perusahaan",
           principals:
             apiProduct.principals ??
-            (apiProduct.principal
-              ? [apiProduct.principal]
-              : []),
-
-          vendorContactId:
-            apiProduct.contactId,
-
-          companyId:
-            apiProduct.companyId,
-
-          category:
-            apiProduct.category,
-
-          brand:
-            apiProduct.brand,
-
-          price:
-            String(apiProduct.price),
-
-          status:
-            apiProduct.status === "ACTIVE"
-              ? "Active"
-              : "Inactive",
-
-          images:
-            apiProduct.images ?? [],
-
-          pdfUrl:
-            apiProduct.pdfUrl ?? null,
-
-          description:
-            apiProduct.description ?? "",
-
-          specification:
-            apiProduct.specification ?? "",
+            (apiProduct.principal ? [apiProduct.principal] : []),
+          vendorContactId: apiProduct.contactId,
+          companyId: apiProduct.companyId,
+          category: apiProduct.category,
+          brand: apiProduct.brand,
+          price: String(apiProduct.price),
+          status: apiProduct.status === "ACTIVE" ? "Active" : "Inactive",
+          images: apiProduct.images ?? [],
+          pdfUrl: apiProduct.pdfUrl ?? null,
+          description: apiProduct.description ?? "",
+          specification: apiProduct.specification ?? "",
         };
 
         setProduct(mappedProduct);
-
-        setDescription(
-          apiProduct.description ?? ""
-        );
-
-        setSpecification(
-          apiProduct.specification ?? ""
-        );
-
-        setStatus(
-          apiProduct.status === "ACTIVE"
-            ? "Active"
-            : "Inactive"
-        );
-
+        setDescription(apiProduct.description ?? "");
+        setSpecification(apiProduct.specification ?? "");
+        setStatus(apiProduct.status === "ACTIVE" ? "Active" : "Inactive");
         setCurrentImageIndex(0);
       } catch (error) {
-        console.error(
-          "Load product detail error:",
-          error
-        );
-
+        console.error("Load product detail error:", error);
         setProduct(null);
       } finally {
         setLoading(false);
@@ -261,14 +179,10 @@ export default function ProductDetailPage() {
         {
           method: "PUT",
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            status:
-              status === "Active"
-                ? "ACTIVE"
-                : "INACTIVE",
+            status: status === "Active" ? "ACTIVE" : "INACTIVE",
           }),
         }
       );
@@ -276,24 +190,17 @@ export default function ProductDetailPage() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        alert(
-          result.message ||
-            "Gagal menyimpan status product"
-        );
+        alert(result.message || "Gagal menyimpan status product");
         return;
       }
 
-      const apiProduct: ApiProduct =
-        result.data;
+      const apiProduct: ApiProduct = result.data;
 
       const updatedStatus =
-        apiProduct.status === "ACTIVE"
-          ? "Active"
-          : "Inactive";
+        apiProduct.status === "ACTIVE" ? "Active" : "Inactive";
 
       setProduct((currentProduct) => {
-        if (!currentProduct)
-          return currentProduct;
+        if (!currentProduct) return currentProduct;
 
         return {
           ...currentProduct,
@@ -304,14 +211,8 @@ export default function ProductDetailPage() {
       setStatus(updatedStatus);
       setEditingStatus(false);
     } catch (error) {
-      console.error(
-        "Save product status error:",
-        error
-      );
-
-      alert(
-        "Terjadi kesalahan saat menyimpan status product"
-      );
+      console.error("Save product status error:", error);
+      alert("Terjadi kesalahan saat menyimpan status product");
     } finally {
       setSavingStatus(false);
     }
@@ -330,20 +231,17 @@ export default function ProductDetailPage() {
     try {
       setSavingDescription(true);
 
-      const trimmedDescription =
-        description.trim();
+      const trimmedDescription = description.trim();
 
       const response = await fetch(
         `${API_BASE_URL}/products/${product.id}`,
         {
           method: "PUT",
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            description:
-              trimmedDescription,
+            description: trimmedDescription,
           }),
         }
       );
@@ -351,41 +249,26 @@ export default function ProductDetailPage() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        alert(
-          result.message ||
-            "Gagal menyimpan deskripsi"
-        );
+        alert(result.message || "Gagal menyimpan deskripsi");
         return;
       }
 
-      const apiProduct: ApiProduct =
-        result.data;
+      const apiProduct: ApiProduct = result.data;
 
       setProduct((currentProduct) => {
-        if (!currentProduct)
-          return currentProduct;
+        if (!currentProduct) return currentProduct;
 
         return {
           ...currentProduct,
-          description:
-            apiProduct.description ?? "",
+          description: apiProduct.description ?? "",
         };
       });
 
-      setDescription(
-        apiProduct.description ?? ""
-      );
-
+      setDescription(apiProduct.description ?? "");
       setEditingDescription(false);
     } catch (error) {
-      console.error(
-        "Save description error:",
-        error
-      );
-
-      alert(
-        "Terjadi kesalahan saat menyimpan deskripsi"
-      );
+      console.error("Save description error:", error);
+      alert("Terjadi kesalahan saat menyimpan deskripsi");
     } finally {
       setSavingDescription(false);
     }
@@ -394,37 +277,27 @@ export default function ProductDetailPage() {
   const handleCancelDescription = () => {
     if (!product) return;
 
-    setDescription(
-      product.description ?? ""
-    );
-
+    setDescription(product.description ?? "");
     setEditingDescription(false);
   };
 
   const handleSaveSpecification = async () => {
-    if (
-      !product ||
-      savingSpecification
-    )
-      return;
+    if (!product || savingSpecification) return;
 
     try {
       setSavingSpecification(true);
 
-      const trimmedSpecification =
-        specification.trim();
+      const trimmedSpecification = specification.trim();
 
       const response = await fetch(
         `${API_BASE_URL}/products/${product.id}`,
         {
           method: "PUT",
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            specification:
-              trimmedSpecification,
+            specification: trimmedSpecification,
           }),
         }
       );
@@ -432,41 +305,26 @@ export default function ProductDetailPage() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        alert(
-          result.message ||
-            "Gagal menyimpan spesifikasi"
-        );
+        alert(result.message || "Gagal menyimpan spesifikasi");
         return;
       }
 
-      const apiProduct: ApiProduct =
-        result.data;
+      const apiProduct: ApiProduct = result.data;
 
       setProduct((currentProduct) => {
-        if (!currentProduct)
-          return currentProduct;
+        if (!currentProduct) return currentProduct;
 
         return {
           ...currentProduct,
-          specification:
-            apiProduct.specification ?? "",
+          specification: apiProduct.specification ?? "",
         };
       });
 
-      setSpecification(
-        apiProduct.specification ?? ""
-      );
-
+      setSpecification(apiProduct.specification ?? "");
       setEditingSpecification(false);
     } catch (error) {
-      console.error(
-        "Save specification error:",
-        error
-      );
-
-      alert(
-        "Terjadi kesalahan saat menyimpan spesifikasi"
-      );
+      console.error("Save specification error:", error);
+      alert("Terjadi kesalahan saat menyimpan spesifikasi");
     } finally {
       setSavingSpecification(false);
     }
@@ -475,10 +333,7 @@ export default function ProductDetailPage() {
   const handleCancelSpecification = () => {
     if (!product) return;
 
-    setSpecification(
-      product.specification ?? ""
-    );
-
+    setSpecification(product.specification ?? "");
     setEditingSpecification(false);
   };
 
@@ -487,9 +342,7 @@ export default function ProductDetailPage() {
   ) => {
     if (!product) return;
 
-    const files = Array.from(
-      event.target.files ?? []
-    );
+    const files = Array.from(event.target.files ?? []);
 
     if (files.length === 0) return;
 
@@ -500,38 +353,27 @@ export default function ProductDetailPage() {
     ];
 
     if (files.length > 5) {
-      alert(
-        "Product maksimal memiliki 5 gambar"
-      );
-
+      alert("Product maksimal memiliki 5 gambar");
       event.target.value = "";
       return;
     }
 
     const invalidFile = files.find(
-      (file) =>
-        !allowedTypes.includes(file.type)
+      (file) => !allowedTypes.includes(file.type)
     );
 
     if (invalidFile) {
-      alert(
-        "File gambar harus berupa JPG, PNG, atau WEBP"
-      );
-
+      alert("File gambar harus berupa JPG, PNG, atau WEBP");
       event.target.value = "";
       return;
     }
 
     const oversizedFile = files.find(
-      (file) =>
-        file.size > 5 * 1024 * 1024
+      (file) => file.size > 5 * 1024 * 1024
     );
 
     if (oversizedFile) {
-      alert(
-        "Ukuran setiap gambar maksimal 5 MB"
-      );
-
+      alert("Ukuran setiap gambar maksimal 5 MB");
       event.target.value = "";
       return;
     }
@@ -542,10 +384,7 @@ export default function ProductDetailPage() {
       const formData = new FormData();
 
       files.forEach((file) => {
-        formData.append(
-          "images",
-          file
-        );
+        formData.append("images", file);
       });
 
       const response = await fetch(
@@ -559,42 +398,28 @@ export default function ProductDetailPage() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        alert(
-          result.message ||
-            "Gagal mengganti gambar product"
-        );
+        alert(result.message || "Gagal mengganti gambar product");
         return;
       }
 
-      const apiProduct: ApiProduct =
-        result.data;
+      const apiProduct: ApiProduct = result.data;
 
       setProduct((currentProduct) => {
-        if (!currentProduct)
-          return currentProduct;
+        if (!currentProduct) return currentProduct;
 
         return {
           ...currentProduct,
-          images:
-            apiProduct.images ?? [],
+          images: apiProduct.images ?? [],
         };
       });
 
       setCurrentImageIndex(0);
       setShowImagePreview(false);
 
-      alert(
-        "Gambar product berhasil diganti"
-      );
+      alert("Gambar product berhasil diganti");
     } catch (error) {
-      console.error(
-        "Replace product images error:",
-        error
-      );
-
-      alert(
-        "Terjadi kesalahan saat mengganti gambar product"
-      );
+      console.error("Replace product images error:", error);
+      alert("Terjadi kesalahan saat mengganti gambar product");
     } finally {
       setUploadingImages(false);
       event.target.value = "";
@@ -606,8 +431,7 @@ export default function ProductDetailPage() {
   ) => {
     if (!product) return;
 
-    const file =
-      event.target.files?.[0];
+    const file = event.target.files?.[0];
 
     if (!file) return;
 
@@ -617,13 +441,8 @@ export default function ProductDetailPage() {
       return;
     }
 
-    if (
-      file.size >
-      10 * 1024 * 1024
-    ) {
-      alert(
-        "Ukuran PDF maksimal 10 MB"
-      );
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran PDF maksimal 10 MB");
       event.target.value = "";
       return;
     }
@@ -631,9 +450,7 @@ export default function ProductDetailPage() {
     try {
       setUploadingPdf(true);
 
-      const formData =
-        new FormData();
-
+      const formData = new FormData();
       formData.append("pdf", file);
 
       const response = await fetch(
@@ -644,42 +461,28 @@ export default function ProductDetailPage() {
         }
       );
 
-      const result =
-        await response.json();
+      const result = await response.json();
 
       if (!response.ok || !result.success) {
-        alert(
-          result.message ||
-            "Gagal mengupload PDF"
-        );
+        alert(result.message || "Gagal mengupload PDF");
         return;
       }
 
-      const apiProduct: ApiProduct =
-        result.data;
+      const apiProduct: ApiProduct = result.data;
 
       setProduct((currentProduct) => {
-        if (!currentProduct)
-          return currentProduct;
+        if (!currentProduct) return currentProduct;
 
         return {
           ...currentProduct,
-          pdfUrl:
-            apiProduct.pdfUrl ??
-            null,
+          pdfUrl: apiProduct.pdfUrl ?? null,
         };
       });
 
       alert("PDF berhasil diupload");
     } catch (error) {
-      console.error(
-        "Upload PDF error:",
-        error
-      );
-
-      alert(
-        "Terjadi kesalahan saat mengupload PDF"
-      );
+      console.error("Upload PDF error:", error);
+      alert("Terjadi kesalahan saat mengupload PDF");
     } finally {
       setUploadingPdf(false);
       event.target.value = "";
@@ -699,14 +502,10 @@ export default function ProductDetailPage() {
         }
       );
 
-      const result =
-        await response.json();
+      const result = await response.json();
 
       if (!response.ok || !result.success) {
-        alert(
-          result.message ||
-            "Gagal menghapus product"
-        );
+        alert(result.message || "Gagal menghapus product");
         return;
       }
 
@@ -715,14 +514,8 @@ export default function ProductDetailPage() {
       router.push("/products");
       router.refresh();
     } catch (error) {
-      console.error(
-        "Delete product error:",
-        error
-      );
-
-      alert(
-        "Terjadi kesalahan saat menghapus product"
-      );
+      console.error("Delete product error:", error);
+      alert("Terjadi kesalahan saat menghapus product");
     } finally {
       setDeleting(false);
     }
@@ -746,17 +539,17 @@ export default function ProductDetailPage() {
             <div className="flex h-16 items-center">
               <Link
                 href="/products"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-[#010736] hover:bg-[#010736] hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-[#010736] hover:bg-[#010736] hover:text-white"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4" />
               </Link>
 
-              <div className="ml-4">
-                <h1 className="text-xl font-semibold text-slate-900">
+              <div className="ml-3">
+                <h1 className="text-lg font-semibold text-[#010736]">
                   Product Detail
                 </h1>
 
-                <p className="text-sm text-slate-500">
+                <p className="text-xs text-slate-500">
                   Product tidak ditemukan
                 </p>
               </div>
@@ -766,20 +559,19 @@ export default function ProductDetailPage() {
 
         <main className="mx-auto flex max-w-7xl items-center justify-center px-6 py-20">
           <div className="text-center">
-            <Package className="mx-auto h-12 w-12 text-slate-300" />
+            <Package className="mx-auto h-11 w-11 text-slate-300" />
 
-            <h2 className="mt-4 text-lg font-semibold text-slate-800">
+            <h2 className="mt-4 text-base font-semibold text-[#010736]">
               Product tidak ditemukan
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Product mungkin sudah dihapus
-              atau belum tersimpan.
+              Product mungkin sudah dihapus atau belum tersimpan.
             </p>
 
             <Link
               href="/products"
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#010736] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#02094d]"
+              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#010736] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#101d50]"
             >
               <ArrowLeft className="h-4 w-4" />
               Kembali ke Product List
@@ -793,10 +585,7 @@ export default function ProductDetailPage() {
   const activeImage =
     product.images.length > 0
       ? product.images[
-          Math.min(
-            currentImageIndex,
-            product.images.length - 1
-          )
+          Math.min(currentImageIndex, product.images.length - 1)
         ]
       : null;
 
@@ -805,30 +594,28 @@ export default function ProductDetailPage() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Link
                 href="/products"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-[#010736] hover:bg-[#010736] hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-[#010736] hover:bg-[#010736] hover:text-white"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4" />
               </Link>
 
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-semibold text-slate-900">
+                  <h1 className="text-lg font-semibold text-[#010736]">
                     Product Detail
                   </h1>
 
-                  <span className="text-slate-300">
-                    /
-                  </span>
+                  <span className="text-slate-300">/</span>
 
-                  <span className="text-sm font-medium text-slate-500">
+                  <span className="text-xs font-medium text-slate-500">
                     {product.code}
                   </span>
                 </div>
 
-                <p className="text-sm text-slate-500">
+                <p className="text-xs text-slate-500">
                   Detail informasi product
                 </p>
               </div>
@@ -836,29 +623,26 @@ export default function ProductDetailPage() {
 
             <button
               type="button"
-              onClick={() =>
-                setShowDeleteModal(true)
-              }
-              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700"
+              onClick={() => setShowDeleteModal(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3.5 py-2 text-xs font-medium text-white transition hover:bg-red-700"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
               Delete Product
             </button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-5">
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+      <main className="mx-auto max-w-7xl px-6 py-7">
+        {/* PRODUCT HEADER */}
+        <div className="mb-5 rounded-xl border border-slate-200 bg-white p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
                 {activeImage ? (
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowImagePreview(true)
-                    }
+                    onClick={() => setShowImagePreview(true)}
                     className="h-full w-full cursor-zoom-in"
                   >
                     <img
@@ -868,22 +652,21 @@ export default function ProductDetailPage() {
                     />
                   </button>
                 ) : (
-                  <Package className="h-10 w-10 text-slate-300" />
+                  <Package className="h-9 w-9 text-slate-300" />
                 )}
               </div>
 
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-[#010736]/10 px-3 py-1 text-xs font-medium text-[#010736]">
+                  <span className="rounded-full bg-[#010736]/10 px-2.5 py-1 text-[11px] font-semibold text-[#010736]">
                     {product.code}
                   </span>
 
                   {!editingStatus ? (
                     <>
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${
-                          product.status ===
-                          "Active"
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                          product.status === "Active"
                             ? "bg-emerald-50 text-emerald-700"
                             : "bg-red-50 text-red-700"
                         }`}
@@ -894,16 +677,12 @@ export default function ProductDetailPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          setStatus(
-                            product.status
-                          );
-                          setEditingStatus(
-                            true
-                          );
+                          setStatus(product.status);
+                          setEditingStatus(true);
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-[#010736]/20 hover:bg-[#010736]/5 hover:text-[#010736]"
+                        className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-600 transition hover:border-[#010736]/20 hover:bg-[#010736]/5 hover:text-[#010736]"
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Pencil className="h-3 w-3" />
                         Edit
                       </button>
                     </>
@@ -913,142 +692,103 @@ export default function ProductDetailPage() {
                         value={status}
                         onChange={(e) =>
                           setStatus(
-                            e.target.value as
-                              | "Active"
-                              | "Inactive"
+                            e.target.value as "Active" | "Inactive"
                           )
                         }
-                        disabled={
-                          savingStatus
-                        }
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 outline-none focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
+                        disabled={savingStatus}
+                        className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 outline-none focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
                       >
-                        <option value="Active">
-                          Active
-                        </option>
-
-                        <option value="Inactive">
-                          Inactive
-                        </option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
                       </select>
 
                       <button
                         type="button"
-                        onClick={
-                          handleCancelStatus
-                        }
-                        disabled={
-                          savingStatus
-                        }
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={handleCancelStatus}
+                        disabled={savingStatus}
+                        className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <X className="h-3.5 w-3.5" />
+                        <X className="h-3 w-3" />
                         Cancel
                       </button>
 
                       <button
                         type="button"
-                        onClick={
-                          handleSaveStatus
-                        }
-                        disabled={
-                          savingStatus
-                        }
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#010736] px-2.5 py-1.5 text-xs font-medium text-white transition hover:bg-[#02094d] disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={handleSaveStatus}
+                        disabled={savingStatus}
+                        className="inline-flex items-center gap-1 rounded-md bg-[#010736] px-2.5 py-1 text-[11px] font-medium text-white transition hover:bg-[#101d50] disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <Check className="h-3.5 w-3.5" />
-
-                        {savingStatus
-                          ? "Saving..."
-                          : "Save"}
+                        <Check className="h-3 w-3" />
+                        {savingStatus ? "Saving..." : "Save"}
                       </button>
                     </>
                   )}
                 </div>
 
-                <h2 className="text-2xl font-bold text-slate-900">
+                <h2 className="text-xl font-bold text-[#010736]">
                   {product.name}
                 </h2>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  {product.brand} •{" "}
-                  {product.category}
+                <p className="mt-1 text-xs text-slate-500">
+                  {product.brand} • {product.category}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-          <div className="space-y-6">
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 px-6 py-4">
+        <div className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+          <div className="space-y-5">
+            {/* PRODUCT INFORMATION */}
+            <div className="rounded-xl border border-slate-200 bg-white">
+              <div className="border-b border-slate-200 px-5 py-3.5">
                 <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-[#010736]" />
-
-                  <h2 className="font-semibold text-slate-900">
+                  <Package className="h-4 w-4 text-[#010736]" />
+                  <h2 className="text-sm font-semibold text-[#010736]">
                     Product Information
                   </h2>
                 </div>
               </div>
 
-              <div className="grid gap-6 p-6 sm:grid-cols-2">
+              <div className="grid gap-5 p-5 sm:grid-cols-2">
                 <InfoItem
-                  icon={
-                    <Package className="h-4 w-4" />
-                  }
+                  icon={<Package className="h-4 w-4" />}
                   label="Product Name"
                   value={product.name}
                 />
 
                 <InfoItem
-                  icon={
-                    <Tag className="h-4 w-4" />
-                  }
+                  icon={<Tag className="h-4 w-4" />}
                   label="Product Code"
                   value={product.code}
                 />
 
                 <InfoItem
-                  icon={
-                    <Tag className="h-4 w-4" />
-                  }
+                  icon={<Tag className="h-4 w-4" />}
                   label="Category"
-                  value={
-                    product.category ||
-                    "Belum ada category"
-                  }
+                  value={product.category || "Belum ada category"}
                 />
 
                 <InfoItem
-                  icon={
-                    <Tag className="h-4 w-4" />
-                  }
+                  icon={<Tag className="h-4 w-4" />}
                   label="Brand"
-                  value={
-                    product.brand ||
-                    "Belum ada brand"
-                  }
+                  value={product.brand || "Belum ada brand"}
                 />
 
                 <InfoItem
-                  icon={
-                    <CreditCard className="h-4 w-4" />
-                  }
+                  icon={<CreditCard className="h-4 w-4" />}
                   label="Price"
-                  value={`Rp ${
-                    product.price || "0"
-                  }`}
+                  value={`Rp ${product.price || "0"}`}
                 />
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+            {/* DESCRIPTION */}
+            <div className="rounded-xl border border-slate-200 bg-white">
+              <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5">
                 <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-[#010736]" />
-
-                  <h2 className="font-semibold text-slate-900">
+                  <FileText className="h-4 w-4 text-[#010736]" />
+                  <h2 className="text-sm font-semibold text-[#010736]">
                     Deskripsi
                   </h2>
                 </div>
@@ -1056,84 +796,64 @@ export default function ProductDetailPage() {
                 {!editingDescription && (
                   <button
                     type="button"
-                    onClick={() =>
-                      setEditingDescription(
-                        true
-                      )
-                    }
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-[#010736]/20 hover:bg-[#010736]/5 hover:text-[#010736]"
+                    onClick={() => setEditingDescription(true)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-[11px] font-medium text-slate-600 transition hover:border-[#010736]/20 hover:bg-[#010736]/5 hover:text-[#010736]"
                   >
-                    <Pencil className="h-3.5 w-3.5" />
+                    <Pencil className="h-3 w-3" />
                     Edit
                   </button>
                 )}
               </div>
 
-              <div className="p-6">
+              <div className="p-5">
                 {editingDescription ? (
                   <div>
                     <textarea
                       value={description}
-                      onChange={(e) =>
-                        setDescription(
-                          e.target.value
-                        )
-                      }
+                      onChange={(e) => setDescription(e.target.value)}
                       placeholder="Tambahkan deskripsi product..."
                       rows={6}
                       autoFocus
-                      className="w-full resize-none rounded-xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
+                      className="w-full resize-none rounded-lg border border-slate-200 bg-white p-3.5 text-sm leading-6 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
                     />
 
                     <div className="mt-3 flex justify-end gap-2">
                       <button
                         type="button"
-                        onClick={
-                          handleCancelDescription
-                        }
-                        disabled={
-                          savingDescription
-                        }
-                        className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={handleCancelDescription}
+                        disabled={savingDescription}
+                        className="rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Cancel
                       </button>
 
                       <button
                         type="button"
-                        onClick={
-                          handleSaveDescription
-                        }
-                        disabled={
-                          savingDescription
-                        }
-                        className="inline-flex items-center gap-2 rounded-lg bg-[#010736] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#02094d] disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={handleSaveDescription}
+                        disabled={savingDescription}
+                        className="inline-flex items-center gap-2 rounded-lg bg-[#010736] px-3.5 py-2 text-xs font-medium text-white transition hover:bg-[#101d50] disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <Check className="h-4 w-4" />
-
-                        {savingDescription
-                          ? "Saving..."
-                          : "Save"}
+                        <Check className="h-3.5 w-3.5" />
+                        {savingDescription ? "Saving..." : "Save"}
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl bg-slate-50 p-5">
-                    <p className="whitespace-pre-line text-sm leading-7 text-slate-600">
-                      {product.description?.trim() ||
-                        "Belum ada deskripsi"}
+                  <div className="rounded-lg bg-slate-50 p-4">
+                    <p className="whitespace-pre-line text-sm leading-6 text-slate-600">
+                      {product.description?.trim() || "Belum ada deskripsi"}
                     </p>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+            {/* SPECIFICATION */}
+            <div className="rounded-xl border border-slate-200 bg-white">
+              <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5">
                 <div className="flex items-center gap-2">
-                  <ListChecks className="h-5 w-5 text-[#010736]" />
-
-                  <h2 className="font-semibold text-slate-900">
+                  <ListChecks className="h-4 w-4 text-[#010736]" />
+                  <h2 className="text-sm font-semibold text-[#010736]">
                     Spesifikasi
                   </h2>
                 </div>
@@ -1141,97 +861,77 @@ export default function ProductDetailPage() {
                 {!editingSpecification && (
                   <button
                     type="button"
-                    onClick={() =>
-                      setEditingSpecification(
-                        true
-                      )
-                    }
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-[#010736]/20 hover:bg-[#010736]/5 hover:text-[#010736]"
+                    onClick={() => setEditingSpecification(true)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-[11px] font-medium text-slate-600 transition hover:border-[#010736]/20 hover:bg-[#010736]/5 hover:text-[#010736]"
                   >
-                    <Pencil className="h-3.5 w-3.5" />
+                    <Pencil className="h-3 w-3" />
                     Edit
                   </button>
                 )}
               </div>
 
-              <div className="p-6">
+              <div className="p-5">
                 {editingSpecification ? (
                   <div>
                     <textarea
                       value={specification}
-                      onChange={(e) =>
-                        setSpecification(
-                          e.target.value
-                        )
-                      }
+                      onChange={(e) => setSpecification(e.target.value)}
                       placeholder="Tambahkan spesifikasi product..."
                       rows={8}
                       autoFocus
-                      className="w-full resize-none rounded-xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
+                      className="w-full resize-none rounded-lg border border-slate-200 bg-white p-3.5 text-sm leading-6 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#010736] focus:ring-1 focus:ring-[#010736]"
                     />
 
                     <div className="mt-3 flex justify-end gap-2">
                       <button
                         type="button"
-                        onClick={
-                          handleCancelSpecification
-                        }
-                        disabled={
-                          savingSpecification
-                        }
-                        className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={handleCancelSpecification}
+                        disabled={savingSpecification}
+                        className="rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Cancel
                       </button>
 
                       <button
                         type="button"
-                        onClick={
-                          handleSaveSpecification
-                        }
-                        disabled={
-                          savingSpecification
-                        }
-                        className="inline-flex items-center gap-2 rounded-lg bg-[#010736] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#02094d] disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={handleSaveSpecification}
+                        disabled={savingSpecification}
+                        className="inline-flex items-center gap-2 rounded-lg bg-[#010736] px-3.5 py-2 text-xs font-medium text-white transition hover:bg-[#101d50] disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <Check className="h-4 w-4" />
-
-                        {savingSpecification
-                          ? "Saving..."
-                          : "Save"}
+                        <Check className="h-3.5 w-3.5" />
+                        {savingSpecification ? "Saving..." : "Save"}
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl bg-slate-50 p-5">
-                    <p className="whitespace-pre-line text-sm leading-7 text-slate-600">
-                      {product.specification?.trim() ||
-                        "Belum ada spesifikasi"}
+                  <div className="rounded-lg bg-slate-50 p-4">
+                    <p className="whitespace-pre-line text-sm leading-6 text-slate-600">
+                      {product.specification?.trim() || "Belum ada spesifikasi"}
                     </p>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+            {/* PDF DOCUMENT */}
+            <div className="rounded-xl border border-slate-200 bg-white">
+              <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5">
                 <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-[#010736]" />
+                  <FileText className="h-4 w-4 text-[#010736]" />
 
                   <div>
-                    <h2 className="font-semibold text-slate-900">
+                    <h2 className="text-sm font-semibold text-[#010736]">
                       Dokumen PDF
                     </h2>
 
-                    <p className="mt-1 text-xs text-slate-500">
-                      Upload dokumen PDF untuk
-                      product ini
+                    <p className="mt-0.5 text-[11px] text-slate-500">
+                      Upload dokumen PDF untuk product ini
                     </p>
                   </div>
                 </div>
 
                 <label
-                  className={`inline-flex items-center gap-2 rounded-lg bg-[#010736] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#02094d] ${
+                  className={`inline-flex items-center gap-1.5 rounded-lg bg-[#010736] px-3 py-2 text-[11px] font-medium text-white transition hover:bg-[#101d50] ${
                     uploadingPdf
                       ? "cursor-not-allowed opacity-50"
                       : "cursor-pointer"
@@ -1246,7 +946,6 @@ export default function ProductDetailPage() {
                   />
 
                   <FileText className="h-3.5 w-3.5" />
-
                   {uploadingPdf
                     ? "Uploading..."
                     : product.pdfUrl
@@ -1255,15 +954,15 @@ export default function ProductDetailPage() {
                 </label>
               </div>
 
-              <div className="p-6">
+              <div className="p-5">
                 {product.pdfUrl ? (
                   <a
                     href={`${API_SERVER_URL}${product.pdfUrl}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-[#010736]/20 hover:bg-[#010736]/5"
+                    className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3.5 transition hover:border-[#010736]/20 hover:bg-[#010736]/5"
                   >
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600">
                       <FileText className="h-5 w-5" />
                     </div>
 
@@ -1273,22 +972,20 @@ export default function ProductDetailPage() {
                       </p>
 
                       <p className="mt-1 text-xs text-slate-500">
-                        Klik untuk membuka PDF
-                        di tab baru
+                        Klik untuk membuka PDF di tab baru
                       </p>
                     </div>
                   </a>
                 ) : (
-                  <div className="rounded-xl bg-slate-50 p-5 text-center">
-                    <FileText className="mx-auto h-8 w-8 text-slate-300" />
+                  <div className="rounded-lg bg-slate-50 p-5 text-center">
+                    <FileText className="mx-auto h-7 w-7 text-slate-300" />
 
-                    <p className="mt-2 text-sm font-medium text-slate-500">
+                    <p className="mt-2 text-xs font-medium text-slate-500">
                       Belum ada dokumen PDF
                     </p>
 
-                    <p className="mt-1 text-xs text-slate-400">
-                      Upload PDF untuk menyimpan
-                      dokumen product
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      Upload PDF untuk menyimpan dokumen product
                     </p>
                   </div>
                 )}
@@ -1296,22 +993,23 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          {/* RIGHT COLUMN */}
+          <div className="space-y-5">
+            {/* PRODUCT PHOTO */}
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="font-semibold text-slate-900">
+                  <h2 className="text-sm font-semibold text-[#010736]">
                     Product Photo
                   </h2>
 
-                  <p className="mt-1 text-xs text-slate-500">
-                    {product.images.length}{" "}
-                    foto tersimpan
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    {product.images.length} foto tersimpan
                   </p>
                 </div>
 
                 <label
-                  className={`inline-flex items-center gap-2 rounded-lg bg-[#010736] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#02094d] ${
+                  className={`inline-flex items-center gap-1.5 rounded-lg bg-[#010736] px-3 py-2 text-[11px] font-medium text-white transition hover:bg-[#101d50] ${
                     uploadingImages
                       ? "cursor-not-allowed opacity-50"
                       : "cursor-pointer"
@@ -1322,60 +1020,42 @@ export default function ProductDetailPage() {
                     accept="image/jpeg,image/png,image/webp"
                     multiple
                     className="hidden"
-                    onChange={
-                      handleReplaceImages
-                    }
+                    onChange={handleReplaceImages}
                     disabled={uploadingImages}
                   />
 
                   <Pencil className="h-3.5 w-3.5" />
-
-                  {uploadingImages
-                    ? "Uploading..."
-                    : "Ganti Foto"}
+                  {uploadingImages ? "Uploading..." : "Ganti Foto"}
                 </label>
               </div>
 
-              {product.images.length > 0 &&
-              activeImage ? (
+              {product.images.length > 0 && activeImage ? (
                 <div>
-                  <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                  <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
                     <button
                       type="button"
-                      onClick={() =>
-                        setShowImagePreview(
-                          true
-                        )
-                      }
+                      onClick={() => setShowImagePreview(true)}
                       className="block w-full cursor-zoom-in"
                     >
                       <img
                         src={`${API_SERVER_URL}${activeImage.imageUrl}`}
-                        alt={`${product.name} ${
-                          currentImageIndex + 1
-                        }`}
+                        alt={`${product.name} ${currentImageIndex + 1}`}
                         className="aspect-square w-full object-cover transition duration-200 hover:scale-[1.02]"
                       />
                     </button>
 
-                    {product.images.length >
-                      1 && (
+                    {product.images.length > 1 && (
                       <>
                         <button
                           type="button"
                           onClick={() =>
                             setCurrentImageIndex(
-                              (
-                                currentImageIndex -
-                                1 +
-                                product.images
-                                  .length
-                              ) %
-                                product.images
-                                  .length
+                              (currentImageIndex - 1 + product.images.length) %
+                                product.images.length
                             )
                           }
-                          className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition hover:bg-black/75"
+                          className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75"
+                          aria-label="Previous image"
                         >
                           <ArrowLeft className="h-4 w-4" />
                         </button>
@@ -1384,113 +1064,94 @@ export default function ProductDetailPage() {
                           type="button"
                           onClick={() =>
                             setCurrentImageIndex(
-                              (
-                                currentImageIndex +
-                                1
-                              ) %
-                                product.images
-                                  .length
+                              (currentImageIndex + 1) % product.images.length
                             )
                           }
-                          className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 rotate-180 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition hover:bg-black/75"
+                          className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 rotate-180 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75"
+                          aria-label="Next image"
                         >
                           <ArrowLeft className="h-4 w-4" />
                         </button>
 
-                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                          {currentImageIndex + 1}{" "}
-                          /{" "}
-                          {product.images.length}
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/55 px-3 py-1 text-[11px] font-medium text-white">
+                          {currentImageIndex + 1} / {product.images.length}
                         </div>
                       </>
                     )}
                   </div>
 
-                  {product.images.length >
-                    1 && (
+                  {product.images.length > 1 && (
                     <div className="mt-3 grid grid-cols-5 gap-2">
-                      {product.images.map(
-                        (image, index) => (
-                          <button
-                            type="button"
-                            key={image.id}
-                            onClick={() => {
-                              setCurrentImageIndex(
-                                index
-                              );
-                              setShowImagePreview(
-                                true
-                              );
-                            }}
-                            className={`overflow-hidden rounded-lg border-2 transition ${
-                              currentImageIndex ===
-                              index
-                                ? "border-[#010736]"
-                                : "border-transparent hover:border-slate-300"
-                            }`}
-                          >
-                            <img
-                              src={`${API_SERVER_URL}${image.imageUrl}`}
-                              alt={`${product.name} thumbnail ${
-                                index + 1
-                              }`}
-                              className="aspect-square w-full object-cover"
-                            />
-                          </button>
-                        )
-                      )}
+                      {product.images.map((image, index) => (
+                        <button
+                          type="button"
+                          key={image.id}
+                          onClick={() => {
+                            setCurrentImageIndex(index);
+                            setShowImagePreview(true);
+                          }}
+                          className={`overflow-hidden rounded-md border-2 transition ${
+                            currentImageIndex === index
+                              ? "border-[#010736]"
+                              : "border-transparent hover:border-slate-300"
+                          }`}
+                        >
+                          <img
+                            src={`${API_SERVER_URL}${image.imageUrl}`}
+                            alt={`${product.name} thumbnail ${index + 1}`}
+                            className="aspect-square w-full object-cover"
+                          />
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="flex aspect-square items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+                <div className="flex aspect-square items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
                   <div className="text-center">
-                    <Package className="mx-auto h-16 w-16 text-slate-300" />
+                    <Package className="mx-auto h-14 w-14 text-slate-300" />
 
-                    <p className="mt-3 text-sm font-medium text-slate-500">
+                    <p className="mt-3 text-xs font-medium text-slate-500">
                       Belum ada foto
                     </p>
                   </div>
                 </div>
               )}
 
-              <p className="mt-3 text-xs leading-5 text-slate-400">
-                Ganti dengan 1–5 gambar JPG, PNG,
-                atau WEBP. Maksimal 5 MB per gambar.
-                Klik foto untuk melihat ukuran besar.
+              <p className="mt-3 text-[11px] leading-5 text-slate-400">
+                Ganti dengan 1–5 gambar JPG, PNG, atau WEBP. Maksimal 5 MB
+                per gambar. Klik foto untuk melihat ukuran besar.
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            {/* PRINCIPAL */}
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
               <div className="mb-3 flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-[#010736]" />
+                <Building2 className="h-4 w-4 text-[#010736]" />
 
-                <h2 className="font-semibold text-slate-900">
+                <h2 className="text-sm font-semibold text-[#010736]">
                   Principal
                 </h2>
               </div>
 
-              <p className="text-xs text-slate-500">
+              <p className="text-[11px] text-slate-500">
                 Principal Product ini
               </p>
 
-              <div className="mt-3 rounded-xl bg-slate-50 p-4">
-                {product.principals.length >
-                0 ? (
+              <div className="mt-3 rounded-lg bg-slate-50 p-3.5">
+                {product.principals.length > 0 ? (
                   <div className="space-y-2">
-                    {product.principals.map(
-                      (principal) => (
-                        <p
-                          key={principal.id}
-                          className="text-sm font-medium text-slate-800"
-                        >
-                          {principal.name}
-                        </p>
-                      )
-                    )}
+                    {product.principals.map((principal) => (
+                      <p
+                        key={principal.id}
+                        className="text-sm font-medium text-slate-800"
+                      >
+                        {principal.name}
+                      </p>
+                    ))}
                   </div>
                 ) : (
-                  <p className="text-sm font-medium text-slate-500">
+                  <p className="text-xs font-medium text-slate-500">
                     Belum ada principal
                   </p>
                 )}
@@ -1501,170 +1162,132 @@ export default function ProductDetailPage() {
       </main>
 
       {/* IMAGE PREVIEW MODAL */}
-      {showImagePreview &&
-        activeImage && (
+      {showImagePreview && activeImage && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4"
+          onClick={() => setShowImagePreview(false)}
+        >
           <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
-            onClick={() =>
-              setShowImagePreview(false)
-            }
+            className="relative flex h-[92vh] w-[94vw] items-center justify-center"
+            onClick={(event) => event.stopPropagation()}
           >
-            <div
-              className="relative flex h-[92vh] w-[94vw] items-center justify-center"
-              onClick={(event) =>
-                event.stopPropagation()
-              }
+            <div className="flex h-[90vh] w-[90vw] items-center justify-center">
+              <img
+                src={`${API_SERVER_URL}${activeImage.imageUrl}`}
+                alt={`${product.name} ${currentImageIndex + 1}`}
+                className="max-h-full max-w-full rounded-lg object-contain"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowImagePreview(false)}
+              className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+              aria-label="Close preview"
             >
-              <div className="flex h-[90vh] w-[90vw] items-center justify-center">
-                <img
-                  src={`${API_SERVER_URL}${activeImage.imageUrl}`}
-                  alt={`${product.name} ${
-                    currentImageIndex + 1
-                  }`}
-                  className="max-h-full max-w-full rounded-xl object-contain shadow-2xl"
-                />
-              </div>
+              <X className="h-5 w-5" />
+            </button>
 
-              {/* CLOSE */}
-              <button
-                type="button"
-                onClick={() =>
-                  setShowImagePreview(false)
-                }
-                className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
-                aria-label="Close preview"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
-              {/* PREVIOUS */}
-              {product.images.length > 1 && (
+            {product.images.length > 1 && (
+              <>
                 <button
                   type="button"
                   onClick={() =>
                     setCurrentImageIndex(
-                      (
-                        currentImageIndex -
-                        1 +
-                        product.images.length
-                      ) %
+                      (currentImageIndex - 1 + product.images.length) %
                         product.images.length
                     )
                   }
-                  className="absolute left-2 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+                  className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
                   aria-label="Previous image"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-5 w-5" />
                 </button>
-              )}
 
-              {/* NEXT */}
-              {product.images.length > 1 && (
                 <button
                   type="button"
                   onClick={() =>
                     setCurrentImageIndex(
-                      (currentImageIndex + 1) %
-                        product.images.length
+                      (currentImageIndex + 1) % product.images.length
                     )
                   }
-                  className="absolute right-2 top-1/2 flex h-12 w-12 -translate-y-1/2 rotate-180 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+                  className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 rotate-180 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
                   aria-label="Next image"
                 >
-                  <ArrowLeft className="h-6 w-6" />
+                  <ArrowLeft className="h-5 w-5" />
                 </button>
-              )}
 
-              {/* COUNTER */}
-              {product.images.length > 1 && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-1.5 text-sm font-medium text-white backdrop-blur-sm">
-                  {currentImageIndex + 1} /{" "}
-                  {product.images.length}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-4 py-1.5 text-xs font-medium text-white">
+                  {currentImageIndex + 1} / {product.images.length}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
-        )}
+        </div>
+      )}
 
       {/* DELETE MODAL */}
       {showDeleteModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
-          onClick={() =>
-            setShowDeleteModal(false)
-          }
+          onClick={() => setShowDeleteModal(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-white shadow-2xl"
-            onClick={(event) =>
-              event.stopPropagation()
-            }
+            className="w-full max-w-md rounded-xl bg-white"
+            onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-base font-semibold text-[#010736]">
                   Delete Product
                 </h2>
 
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-xs text-slate-500">
                   Hapus product dari Product List
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowDeleteModal(false)
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                onClick={() => setShowDeleteModal(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                aria-label="Close modal"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="px-6 py-5">
-              <div className="rounded-xl bg-red-50 p-4">
+            <div className="px-5 py-4">
+              <div className="rounded-lg border border-red-100 bg-red-50 p-3.5">
                 <p className="text-sm leading-6 text-red-700">
-                  Apakah anda yakin mau menghapus
-                  product{" "}
-                  <span className="font-semibold">
-                    {product.name}
-                  </span>
-                  ?
+                  Apakah anda yakin mau menghapus product{" "}
+                  <span className="font-semibold">{product.name}</span>?
                 </p>
 
                 <p className="mt-2 text-xs leading-5 text-red-500">
-                  Product akan dihapus dari Product
-                  List.
+                  Product akan dihapus dari Product List.
                 </p>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-5">
+            <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-4">
               <button
                 type="button"
-                onClick={() =>
-                  setShowDeleteModal(false)
-                }
+                onClick={() => setShowDeleteModal(false)}
                 disabled={deleting}
-                className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
 
               <button
                 type="button"
-                onClick={
-                  handleDeleteProduct
-                }
+                onClick={handleDeleteProduct}
                 disabled={deleting}
-                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-xs font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Trash2 className="h-4 w-4" />
-
-                {deleting
-                  ? "Deleting..."
-                  : "Delete Product"}
+                <Trash2 className="h-3.5 w-3.5" />
+                {deleting ? "Deleting..." : "Delete Product"}
               </button>
             </div>
           </div>
@@ -1690,7 +1313,7 @@ function InfoItem({
       </div>
 
       <div className="min-w-0">
-        <p className="text-xs font-medium text-slate-400">
+        <p className="text-[11px] font-medium text-slate-400">
           {label}
         </p>
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -52,18 +51,14 @@ export default function RouteTransition() {
 
       if (!href) return;
 
-      // Hanya internal route
       if (!href.startsWith("/") || href.startsWith("//")) return;
 
-      // Jangan ganggu tab baru
       if (anchor.target === "_blank") return;
 
       const url = new URL(href, window.location.origin);
 
-      // Kalau masih di halaman yang sama
       if (url.pathname === pathname) return;
 
-      // Cegah double click
       if (navigatingRef.current) {
         event.preventDefault();
         return;
@@ -92,91 +87,32 @@ export default function RouteTransition() {
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="pointer-events-none fixed inset-0 z-[99999] overflow-hidden"
-          initial={{
-            opacity: 0,
-          }}
-          animate={{
-            opacity: 1,
-          }}
-          exit={{
-            opacity: 0,
-          }}
+          className="pointer-events-none fixed inset-0 z-[99999] flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{
             duration: 0.2,
             ease: "easeOut",
           }}
         >
+          <div className="relative flex h-[76px] w-[76px] items-center justify-center">
+            {/* Rotating loading ring */}
+            <motion.div
+              className="absolute inset-0 rounded-full border-[3px] border-white/20 border-t white"
+              animate={{ rotate: 360 }}
+              transition={{
+                duration: 0.85,
+                ease: "linear",
+                repeat: Infinity,
+              }}
+            />
 
-          <motion.div
-            className="absolute inset-0 bg-[#010736]"
-            initial={{
-              x: "100%",
-            }}
-            animate={{
-              x: "0%",
-            }}
-            exit={{
-              x: "-100%",
-            }}
-            transition={{
-              duration: 0.65,
-              ease: [0.76, 0, 0.24, 1],
-            }}
-          />
-          <motion.div
-            className="absolute left-1/2 top-1/2 h-[450px] w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.06] blur-3xl"
-            initial={{
-              opacity: 0,
-              scale: 0.6,
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-            }}
-            exit={{
-              opacity: 0,
-              scale: 1.15,
-            }}
-            transition={{
-              duration: 0.7,
-              ease: "easeOut",
-            }}
-          />
-          <motion.div
-            className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
-            initial={{
-              opacity: 0,
-              scale: 0.7,
-              y: 15,
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              y: 0,
-            }}
-            exit={{
-              opacity: 0,
-              scale: 1.08,
-              y: -10,
-            }}
-            transition={{
-              delay: 0.12,
-              duration: 0.5,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-          >
-            <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-white/10 p-5 shadow-2xl backdrop-blur-md ring-1 ring-white/10">
-              <Image
-                src="/OIP.webp"
-                alt="Logo"
-                width={80}
-                height={80}
-                priority
-                className="h-auto w-auto max-h-16 max-w-16 object-contain"
-              />
-            </div>
-          </motion.div>
+            {/* Center text */}
+            <span className="text-[15px] font-bold tracking-wide text-white">
+              RnD
+            </span>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
